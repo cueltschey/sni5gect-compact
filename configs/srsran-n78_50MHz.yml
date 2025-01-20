@@ -1,0 +1,49 @@
+# This example configuration outlines how to configure the srsRAN Project gNB to create a single FDD cell
+# transmitting in band 3, with 20 MHz bandwidth and 15 kHz sub-carrier-spacing. A USRP B200 is configured 
+# as the RF frontend using split 8, with a Leo Bodnar GPSDO as an external reference clock. 
+
+# This particular configuration is intended to be used with srsUE. Note the `pdcch` parameters set in the 
+# `cell_cfg` section. These are set to match the capabilities of srsUE. 
+
+amf:
+  addr: 127.0.0.5                                                 # The address or hostname of the AMF.
+  bind_addr: 127.0.100.1                                            # A local IP that the gNB binds to for>
+
+ru_sdr:
+  device_driver: uhd                                              # The RF driver name.
+  device_args: type=b200,serial=3218CD2                           # Optionally pass arguments to the selected RF driver.
+  # device_args: type=x300,addr=192.168.40.2,master_clock_rate=184.32e6,send_frame_size=8000,recv_frame_size=8000         # x300,num_recv_frames=8000,num_send_frames=8000                          # Optionally pass arguments to the selected RF driver.
+  sync: internal                                                                                                # Set sync to external. This set-up uses a LEO BODNAR GPDSO providing a 10 MHz ref.
+  srate: 61.44                                                    # RF sample rate might need to be adjusted according to selected bandwidth.
+  # tx_gain: 36
+  # rx_gain: 30
+  tx_gain: 80                                                     # Transmit gain of the RF might need to adjusted to the given situation.
+  rx_gain: 60                                                     # Receive gain of the RF might need to adjusted to the given situation.
+
+cell_cfg:
+  dl_arfcn: 628500                                                # ARFCN of the downlink carrier (center frequency).
+  band: 78                                                        # The NR band.
+  channel_bandwidth_MHz: 50                                       # Bandwith in MHz. Number of PRBs will be automatically derived.
+  common_scs: 30                                                  # Subcarrier spacing in kHz used for data.
+  plmn: "00101"                                                   # PLMN broadcasted by the gNB.
+  tac: 1                                                          # Tracking area code (needs to match the core configuration). 
+  pci: 1                                                          # Physical cell ID.
+  pdcch:
+    # common:
+    #   ss0_index: 0                  # Set search space zero index to match srsUE capabilities
+    #   coreset0_index: 12            # Set search CORESET Zero index to match srsUE capabilities
+    dedicated:
+      ss2_type: common              # Search Space type, has to be set to common
+      dci_format_0_1_and_1_1: false # Set correct DCI format (fallback)
+  prach:
+    prach_config_index: 1           # Sets PRACH config to match what is expected by srsUE
+
+log:
+  filename: /tmp/srsran.log                                                # Path of the log file.
+  all_level: debug                                                 # Logging level applied to all layers.
+
+pcap:
+  mac_enable: enable                                              # Set to true to enable MAC-layer PCAP>
+  mac_filename: /tmp/srsran_capture_mac.pcap                                 # Path where the MAC PCAP is stored.
+  ngap_enable: enable                                             # Set to true to enable NGAP PCAPs.
+  ngap_filename: /tmp/srsran_capture_ngap.pcap                               # Path where the NGAP PCAP is stored.
