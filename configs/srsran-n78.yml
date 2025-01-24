@@ -1,46 +1,45 @@
-# This example configuration outlines how to configure the srsRAN Project gNB to create a single FDD cell
-# transmitting in band 3, with 20 MHz bandwidth and 15 kHz sub-carrier-spacing. A USRP B200 is configured 
-# as the RF frontend using split 8, with a Leo Bodnar GPSDO as an external reference clock. 
+# This example configuration outlines how to configure the srsRAN Project gNB to create a single TDD cell
+# transmitting in band 78, with 20 MHz bandwidth and 30 kHz sub-carrier-spacing. A USRP B200 is configured
+# as the RF frontend using split 8. Note in this example an external clock source is not used, so the sync
+# is not defined and the default is used.
 
-# This particular configuration is intended to be used with srsUE. Note the `pdcch` parameters set in the 
-# `cell_cfg` section. These are set to match the capabilities of srsUE. 
-
-amf:
-  addr: 127.0.0.5                                                 # The address or hostname of the AMF.
-  bind_addr: 127.0.100.1                                            # A local IP that the gNB binds to for>
+cu_cp:
+  amf:
+    addr: 127.0.0.5
+    port: 38412
+    bind_addr: 127.0.100.1
+    supported_tracking_areas:
+      - tac: 1
+        plmn_list:
+          - plmn: "00101"
+            tai_slice_support_list:
+              - sst: 1
 
 ru_sdr:
-  device_driver: uhd                                              # The RF driver name.
-  device_args: type=b200,serial=3218CC4                          # Optionally pass arguments to the selected RF driver.
-  sync: internal                                                                                                # Set sync to external. This set-up uses a LEO BODNAR GPSDO providing a 10 MHz ref.
-  srate: 23.04                                                    # RF sample rate might need to be adjusted according to selected bandwidth.
-  tx_gain: 80                                                     # Transmit gain of the RF might need to adjusted to the given situation.
-  rx_gain: 40                                                     # Receive gain of the RF might need to adjusted to the given situation.
+  device_driver: uhd
+  device_args: type=b200
+  srate: 23.04
+  otw_format: sc12
+  tx_gain: 80
+  rx_gain: 40
 
 cell_cfg:
-  dl_arfcn: 628500                                                # ARFCN of the downlink carrier (center frequency).
-  band: 78                                                        # The NR band.
-  channel_bandwidth_MHz: 20                                       # Bandwith in MHz. Number of PRBs will be automatically derived.
-  common_scs: 30                                                  # Subcarrier spacing in kHz used for data.
-  plmn: "00101"                                                   # PLMN broadcasted by the gNB.
-  tac: 1                                                          # Tracking area code (needs to match the core configuration). 
-  pci: 1                                                          # Physical cell ID.
-  pdcch:
-    # common:
-    #   ss0_index: 0                  # Set search space zero index to match srsUE capabilities
-    #   coreset0_index: 12            # Set search CORESET Zero index to match srsUE capabilities
-    dedicated:
-      ss2_type: common              # Search Space type, has to be set to common
-      dci_format_0_1_and_1_1: false # Set correct DCI format (fallback)
+  dl_arfcn: 628500
+  band: 78
+  channel_bandwidth_MHz: 20
+  common_scs: 30
+  plmn: "00101"
+  tac: 1
+  pci: 1
   prach:
-    prach_config_index: 1           # Sets PRACH config to match what is expected by srsUE
+    prach_config_index: 1
 
 log:
-  filename: /tmp/srsran.log                                                # Path of the log file.
-  all_level: debug                                                 # Logging level applied to all layers.
+  filename: /tmp/gnb.log
+  all_level: info
 
 pcap:
-  mac_enable: enable                                              # Set to true to enable MAC-layer PCAP>
-  mac_filename: /tmp/srsran_capture_mac.pcap                                 # Path where the MAC PCAP is stored.
-  ngap_enable: enable                                             # Set to true to enable NGAP PCAPs.
-  ngap_filename: /tmp/srsran_capture_ngap.pcap                               # Path where the NGAP PCAP is stored.
+  mac_enable: true
+  mac_filename: /tmp/gnb_mac.pcap
+  ngap_enable: true
+  ngap_filename: /tmp/gnb_ngap.pcap
