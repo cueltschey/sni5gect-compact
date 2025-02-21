@@ -1,6 +1,6 @@
 set(TestCommonSources ${SHADOWER_DIR}/utils.cc)
 
-add_executable(source_test source_test.cc ${SHADOWER_DIR}/source.cc ${TestCommonSources})
+add_executable(source_test source_test.cc ${SHADOWER_DIR}/source.cc ${SHADOWER_DIR}/ring_buffer.cc ${TestCommonSources})
 target_link_libraries(source_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(cell_search_test cell_search_test.cc ${TestCommonSources})
@@ -11,6 +11,7 @@ target_link_libraries(search_ssb_freq_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${
 
 add_executable(syncer_test syncer_test.cc ${TestCommonSources}
     ${SHADOWER_DIR}/source.cc
+    ${SHADOWER_DIR}/ring_buffer.cc
     ${SHADOWER_DIR}/syncer.cc
 )
 target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
@@ -63,16 +64,17 @@ target_link_libraries(msg_helper_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_L
 add_executable(sib_overshadow_test sib_overshadow_test.cc ${TestCommonSources}
     ${SHADOWER_DIR}/source.cc
     ${SHADOWER_DIR}/syncer.cc
+    ${SHADOWER_DIR}/ring_buffer.cc
 )
 target_link_libraries(sib_overshadow_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(prach_detect_test prach_detect_test.cc ${TestCommonSources})
 target_link_libraries(prach_detect_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(prach_search_test prach_search_test.cc ${TestCommonSources} ${SHADOWER_DIR}/source.cc ${SHADOWER_DIR}/syncer.cc)
+add_executable(prach_search_test prach_search_test.cc ${TestCommonSources} ${SHADOWER_DIR}/source.cc ${SHADOWER_DIR}/ring_buffer.cc ${SHADOWER_DIR}/syncer.cc)
 target_link_libraries(prach_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(sdr_timing_test sdr_timing_test.cc ${TestCommonSources} ${SHADOWER_DIR}/source.cc ${SHADOWER_DIR}/syncer.cc)
+add_executable(sdr_timing_test sdr_timing_test.cc ${TestCommonSources} ${SHADOWER_DIR}/source.cc ${SHADOWER_DIR}/ring_buffer.cc ${SHADOWER_DIR}/syncer.cc)
 target_link_libraries(sdr_timing_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(exploit_rrc_setup_test exploit_rrc_setup_test.cc ${TestCommonSources} ${SHADOWER_DIR}/wd_worker.cc)

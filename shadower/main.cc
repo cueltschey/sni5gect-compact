@@ -19,8 +19,13 @@ int main(int argc, char* argv[])
 
   // Initialize the source based on the configuration
   if (config.use_sdr) {
-    source = new SDRSource(
-        config.device_args, config.sample_rate, config.dl_freq, config.ul_freq, config.rx_gain, config.tx_gain);
+    source = new SDRSource(config.device_args,
+                           config.sample_rate,
+                           config.dl_freq,
+                           config.ul_freq,
+                           config.rx_gain,
+                           config.tx_gain,
+                           config.device_name);
     logger.info(YELLOW "Initialized source using SDR: %s" RESET, config.device_args.c_str());
   } else {
     source = new FileSource(config.record_file.c_str(), config.sample_rate);

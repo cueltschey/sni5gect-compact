@@ -53,6 +53,7 @@ struct ShadowerConfig {
   std::string recorder_file;
 
   bool        use_sdr;
+  std::string device_name;
   std::string device_args;
   std::string record_file;
 
@@ -111,6 +112,7 @@ inline int parse_args(ShadowerConfig& config, int argc, char* argv[])
       ("task.parse_messages", bpo::value<bool>(&config.parse_messages)->default_value(true), "Prevent parsing messages if the flag is false")
       // source config section
       ("source.use_sdr", bpo::value<bool>(&config.use_sdr)->default_value(false), "Use SDR")
+      ("source.device_name", bpo::value<std::string>(&config.device_name)->default_value(""), "Device name to use")
       ("source.device_args", bpo::value<std::string>(&config.device_args)->default_value(""), "Device args for downlink")
       ("source.record_file", bpo::value<std::string>(&config.record_file)->default_value(""), "Record file for downlink")
       // Pcap settings

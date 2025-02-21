@@ -1,7 +1,9 @@
 #ifndef SOURCE_H
 #define SOURCE_H
+#include "shadower/hdr/ring_buffer.h"
 #include "shadower/hdr/utils.h"
 #include "srsran/radio/radio.h"
+#include "srsran/srslog/srslog.h"
 #include <fstream>
 #include <memory>
 #include <mutex>
@@ -12,6 +14,7 @@
 class Source
 {
 public:
+  virtual ~Source() = default;
   virtual bool is_sdr() const { return false; }
   virtual int  receive(cf_t* buffer, uint32_t nof_samples, srsran_timestamp_t* ts)                  = 0;
   virtual int  send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_time, uint32_t slot = 0) = 0;
@@ -37,16 +40,10 @@ private:
   srsran_timestamp_t timestamp_prev{};
 };
 
-class SDRSource final : public Source
+class UHDSource final : public Source
 {
 public:
-  SDRSource(const std::string& device_args,
-            double             srate_,
-            double             rx_freq,
-            double             tx_freq,
-            double             rx_gain,
-            double             tx_gain);
-  bool is_sdr() const override { return true; }
+  UHDSource(std::string device_args, double srate_, double rx_freq, double tx_freq, double rx_gain, double tx_gain);
   int  send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_time, uint32_t slot = 0) override;
   int  receive(cf_t* buffer, uint32_t nof_samples, srsran_timestamp_t* ts) override;
   void close() override;
@@ -59,4 +56,56 @@ private:
   double      srate;
 };
 
+class LimeSDRSource final : public Source
+{
+public:
+  LimeSDRSource(std::string device_args, double srate_, double rx_freq, double tx_freq, double rx_gain, double tx_gain);
+  int  send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_time, uint32_t slot = 0) override;
+  int  receive(cf_t* buffer, uint32_t nof_samples, srsran_timestamp_t* ts) override;
+  void close() override;
+  void set_tx_gain(double gain) override { srsran_rf_set_tx_gain(&rf, gain); }
+  void set_rx_gain(double gain) override { srsran_rf_set_rx_gain(&rf, gain); }
+
+private:
+  void                  thread_recv();
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("LimeSDRSource", false);
+  srsran_rf_t           rf{};
+  std::mutex            mutex;
+  double                srate;
+  Ring_Buffer           ring_buffer{sizeof(cf_t) * (1 << 17) * 300};
+};
+
+class SDRSource final : public Source
+{
+public:
+  SDRSource(const std::string& device_args,
+            double             srate_,
+            double             rx_freq,
+            double             tx_freq,
+            double             rx_gain,
+            double             tx_gain,
+            std::string        device_name = "UHD")
+  {
+    if (device_name == "UHD") {
+      source = std::make_unique<UHDSource>(device_args, srate_, rx_freq, tx_freq, rx_gain, tx_gain);
+    } else if (device_name == "LimeSDR") {
+      source = std::make_unique<LimeSDRSource>(device_args, srate_, rx_freq, tx_freq, rx_gain, tx_gain);
+    }
+  }
+  bool is_sdr() const override { return true; }
+  int  send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_time, uint32_t slot = 0) override
+  {
+    return source->send(samples, length, tx_time, slot);
+  };
+  int receive(cf_t* buffer, uint32_t nof_samples, srsran_timestamp_t* ts) override
+  {
+    return source->receive(buffer, nof_samples, ts);
+  }
+  void close() override { source->close(); };
+  void set_tx_gain(double gain) override { source->set_tx_gain(gain); };
+  void set_rx_gain(double gain) override { source->set_rx_gain(gain); };
+
+private:
+  std::unique_ptr<Source> source;
+};
 #endif // SOURCE_H

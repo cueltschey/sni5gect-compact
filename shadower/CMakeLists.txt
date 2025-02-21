@@ -104,7 +104,7 @@ endif()
 add_executable(recorder tools/recorder.cc)
 target_link_libraries(recorder ${UHD_LIBRARIES} ${Boost_LIBRARIES} pthread)
 
-add_executable(scanner tools/scanner.cc src/source.cc src/utils.cc)
+add_executable(scanner tools/scanner.cc src/source.cc src/ring_buffer.cc src/utils.cc)
 target_link_libraries(scanner ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 
 add_executable(srsran_recorder tools/srsran_recorder.cc)
@@ -123,6 +123,7 @@ add_executable(shadower
   src/ue_dl_worker.cc
   src/gnb_ul_worker.cc
   src/msg_helper.cc
+  src/ring_buffer.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
 target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
