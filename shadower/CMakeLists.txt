@@ -105,7 +105,7 @@ add_executable(recorder tools/recorder.cc)
 target_link_libraries(recorder ${UHD_LIBRARIES} ${Boost_LIBRARIES} pthread)
 
 add_executable(scanner tools/scanner.cc src/source.cc src/ring_buffer.cc src/utils.cc)
-target_link_libraries(scanner ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
+target_link_libraries(scanner ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${SRSUE_SOURCES} ${SRSRAN_SOURCES} limesuiteng::limesuiteng)
 
 add_executable(srsran_recorder tools/srsran_recorder.cc)
 target_link_libraries(srsran_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
@@ -126,7 +126,7 @@ add_executable(shadower
   src/ring_buffer.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
-target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
+target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector limesuiteng::limesuiteng)
 
 add_executable(lime_sdr_recorder tools/lime_sdr_recorder.cc)
 target_link_libraries(lime_sdr_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES} limesuiteng::limesuiteng)

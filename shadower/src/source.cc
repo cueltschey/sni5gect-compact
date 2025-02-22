@@ -94,6 +94,14 @@ int UHDSource::send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_time,
   }
 }
 
+static void LimeLogCallback(lime::LogLevel level, const std::string& msg)
+{
+  // if (level > lime::LogLevel::Info) {
+  //   return;
+  // }
+  printf(GREEN "[LimeSDR]" RESET " %s\n", msg.c_str());
+}
+
 /* Initialize the radio object and apply the configurations */
 LimeSDRSource::LimeSDRSource(std::string device_args,
                              double      srate_,
@@ -103,74 +111,94 @@ LimeSDRSource::LimeSDRSource(std::string device_args,
                              double      tx_gain) :
   srate(srate_)
 {
-  std::string device_name = "limesuiteng";
-  logger.info(YELLOW "SDR Name: \"%s\", Args: \"%s\"" RESET, device_name, device_args);
-  if (srsran_rf_open_devname(&rf, (const char*)device_name.c_str(), (char*)device_args.c_str(), 1) != 0) {
-    throw std::runtime_error("Failed to open radio");
+  std::map<std::string, std::string> args = parse_device_args(device_args);
+  for (auto& arg : args) {
+    LimeLogCallback(lime::LogLevel::Info, "Device argument " + arg.first + ": " + arg.second);
+  }
+  lime::registerLogHandler(LimeLogCallback);
+  ConnectToFilteredOrDefaultDevice(args);
+  if (!device) {
+    throw std::runtime_error("Failed to connect to device");
+  }
+  LimeLogCallback(lime::LogLevel::Info, "Connected to device: " + device->GetDescriptor().name);
+  device->SetMessageLogCallback(LimeLogCallback);
+  device->Init();
+  printf("srate: %f\n", srate);
+}
+
+void LimeSDRSource::ConnectToFilteredOrDefaultDevice(std::map<std::string, std::string>& args)
+{
+  // Enumerate available devices
+  auto handles = lime::DeviceRegistry::enumerate();
+  if (handles.empty()) {
+    LimeLogCallback(lime::LogLevel::Error, "No LimeSDR devices found");
+    device = nullptr;
+    return;
   }
 
-  srsran_rf_set_rx_srate(&rf, srate);
-  srsran_rf_set_rx_freq(&rf, 0, rx_freq);
-  srsran_rf_set_rx_gain(&rf, rx_gain);
+  // Show info about all available devices
+  for (size_t i = 0; i < handles.size(); i++) {
+    LimeLogCallback(lime::LogLevel::Info, "Device " + std::to_string(i) + " available: " + handles[i].Serialize());
+  }
 
-  srsran_rf_set_tx_srate(&rf, srate);
-  srsran_rf_set_tx_freq(&rf, 0, tx_freq);
-  srsran_rf_set_tx_gain(&rf, tx_gain);
-}
-
-void LimeSDRSource::close()
-{
-  srsran_rf_close(&rf);
-}
-
-void LimeSDRSource::thread_recv()
-{
-  cf_t        buffer[512];
-  static bool overflow_indication = false;
-
-  enable_rt_scheduler(0);
-  srsran_rf_start_rx_stream(&rf, true);
-
-  while (true) {
-    int nsamples = srsran_rf_recv(&rf, buffer, sizeof(buffer) / sizeof(cf_t), true);
-    if (nsamples < 0)
-      continue;
-
-    // ring_buffer.put(buffer, nsamples);
-
-    if (!ring_buffer.put(buffer, nsamples)) {
-      if (!overflow_indication) {
-        overflow_indication = true;
-        logger.error("RX Overflow - Ring buffer full (%d MB)", ring_buffer.capacity() / 1024 / 1024);
+  // Find the device based on the serial
+  lime::SDRDevice* dev          = nullptr;
+  bool             found_target = false;
+  for (size_t i = 0; i < handles.size(); i++) {
+    // If serial number matches
+    if (args.find("serial") != args.end()) {
+      if (handles[i].serial == args["serial"]) {
+        dev          = lime::DeviceRegistry::makeDevice(handles[i]);
+        found_target = true;
+        break;
+      }
+    }
+    // If device name matches
+    if (args.find("name") != args.end()) {
+      if (handles[i].name == args["name"]) {
+        dev          = lime::DeviceRegistry::makeDevice(handles[i]);
+        found_target = true;
+        break;
       }
     }
   }
+
+  if (!found_target) {
+    dev = lime::DeviceRegistry::makeDevice(handles.at(0));
+  }
+  if (!dev) {
+    LimeLogCallback(lime::LogLevel::Error, "Failed to create device");
+    device = nullptr;
+    return;
+  }
+  device = dev;
 }
+
+void LimeSDRSource::close() {}
 
 int LimeSDRSource::receive(cf_t* buffer, uint32_t nof_samples, srsran_timestamp_t* ts)
 {
-  static bool rx_started = false;
-
-  if (!rx_started) {
-    rx_started = true;
-    std::thread t(&LimeSDRSource::thread_recv, this);
-    t.detach();
-  }
-
-  while (ring_buffer.size_used() < nof_samples)
-    usleep(10);
-
-  return ring_buffer.get(buffer, nof_samples) ? nof_samples : 0;
+  return 0;
 }
 
 /* TODO implement send the IQ samples at the scheduled time */
 int LimeSDRSource::send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_time, uint32_t slot)
 {
-  std::lock_guard<std::mutex> lock(mutex);
-  try {
-    int samples_sent = srsran_rf_send_timed2(&rf, samples, length, tx_time.full_secs, tx_time.frac_secs, true, true);
-    return samples_sent;
-  } catch (const std::exception& e) {
-    return -1;
+  return 0;
+}
+
+std::map<std::string, std::string> LimeSDRSource::parse_device_args(const std::string& device_args)
+{
+  std::map<std::string, std::string> args;
+  std::istringstream                 iss(device_args);
+  std::string                        token;
+  while (std::getline(iss, token, ',')) {
+    std::istringstream is(token);
+    std::string        key;
+    std::string        value;
+    std::getline(is, key, ':');
+    std::getline(is, value);
+    args[key] = value;
   }
+  return args;
 }
