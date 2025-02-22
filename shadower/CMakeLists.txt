@@ -128,6 +128,9 @@ add_executable(shadower
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
 target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
 
+add_executable(lime_sdr_recorder tools/lime_sdr_recorder.cc)
+target_link_libraries(lime_sdr_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES} limesuiteng::limesuiteng)
+
 include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src ${WDISSECTOR_INCLUDES})
 set(SHADOWER_DIR ${CMAKE_HOME_DIRECTORY}/shadower/src)
 add_subdirectory(test)
