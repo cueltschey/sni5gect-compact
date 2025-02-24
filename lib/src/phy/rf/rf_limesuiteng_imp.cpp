@@ -138,7 +138,7 @@ static void           LogCallback(LogLevel lvl, const std::string& msg)
   printf("%s\n", msg.c_str());
 }
 
-class srsRAN_ParamProvider : public LimeSettingsProvider
+class LimeParamProvider : public LimeSettingsProvider
 {
 private:
   static std::string trim(const std::string& s)
@@ -187,7 +187,7 @@ private:
   }
 
 public:
-  srsRAN_ParamProvider(const char* args) : mArgs(args) { argsToMap(mArgs); }
+  LimeParamProvider(const char* args) : mArgs(args) { argsToMap(mArgs); }
 
   bool GetString(std::string& dest, const char* varname) override
   {
@@ -236,7 +236,7 @@ int rf_limesuiteng_open_multi(char* args, void** h, uint32_t num_requested_chann
   lime->rxChannels.resize(num_requested_channels);
   lime->txChannels.resize(num_requested_channels);
 
-  srsRAN_ParamProvider configProvider(args);
+  LimeParamProvider configProvider(args);
 
   // gathers arguments and initializes devices
   if (LimePlugin_Init(lime, LogCallback, &configProvider)) {
