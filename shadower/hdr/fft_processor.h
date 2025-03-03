@@ -22,7 +22,9 @@ public:
   }
   void process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t slot_idx);
 
-  cufftComplex* d_signal; // Allocate GPU memory
+  cufftComplex* d_signal;        // Allocate GPU memory
+  cufftComplex* h_pinned_buffer; // Pin memory for faster data transfer
+  cudaStream_t  stream;          // CUDA stream for asynchronous data transfer
 
   uint32_t fft_size; // FFT size
   uint32_t nof_re;   // Number of subcarriers
