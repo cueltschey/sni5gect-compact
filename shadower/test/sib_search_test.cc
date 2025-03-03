@@ -1,3 +1,4 @@
+#include "shadower/hdr/fft_processor.h"
 #include "shadower/hdr/utils.h"
 #include "srsran/common/phy_cfg_nr.h"
 #include "srsran/phy/phch/pbch_msg_nr.h"
@@ -63,13 +64,27 @@ int main()
   /* run ue_dl estimate fft */
   srsran_ue_dl_nr_estimate_fft(&ue_dl, &slot_cfg);
 
-  /* Write OFDM symbols to file for debug purpose */
   char filename[64];
-  sprintf(filename, "ofdm_sib1_fft%u", nof_sc);
+  sprintf(filename, "ofdm_srsran_fft%u", nof_sc);
+  write_record_to_file(ue_dl.sf_symbols[0], nof_re, filename);
+  cf_t* ofdm_srsran = srsran_vec_cf_malloc(nof_re);
+  srsran_vec_cf_copy(ofdm_srsran, ue_dl.sf_symbols[0], nof_re);
+
+  FFTProcessor fft_processor(config.sample_rate, scs, config.nof_prb);
+  fft_processor.process_samples(buffer, ue_dl.sf_symbols[0], slot_cfg.idx);
+
+  cf_t* ofdm_liqid = srsran_vec_cf_malloc(nof_re);
+  srsran_vec_cf_copy(ofdm_liqid, ue_dl.sf_symbols[0], nof_re);
+
+  /* Write OFDM symbols to file for debug purpose */
+  sprintf(filename, "ofdm_liqid_fft%u", nof_sc);
   write_record_to_file(ue_dl.sf_symbols[0], nof_re, filename);
 
   /* search for dci */
   ue_dl_dci_search(ue_dl, phy_cfg, slot_cfg, rnti, rnti_type, phy_state, logger);
+
+  // sprintf(filename, "ofdm_lse_buffer_fft%u", 72);
+  // write_record_to_file(ue_dl.dmrs_pdcch[0].lse[0], 72, filename);
 
   /* get grant from dci search */
   uint32_t                   pid          = 0;
