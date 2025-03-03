@@ -35,16 +35,14 @@ FFTProcessor::FFTProcessor(double sample_rate_, srsran_subcarrier_spacing_t scs_
   // Long CP list for 0 and 7 * 2^(miu - 1)
   cp_length_list[0]                      = long_cp_length;
   cp_length_list[7 * two_pow_numerology] = long_cp_length;
-
-  /* Initiaize the input and output buffer */
-  input  = srsran_vec_cf_malloc(fft_size);
-  output = srsran_vec_cf_malloc(fft_size);
-
-  plan = fft_create_plan(fft_size,
-                         reinterpret_cast<liquid_float_complex*>(input),
-                         reinterpret_cast<liquid_float_complex*>(output),
-                         LIQUID_FFT_FORWARD,
-                         0);
+  cudaError_t error                      = cudaMalloc((void**)&d_signal, fft_size * sizeof(cufftComplex));
+  if (error != cudaError::cudaSuccess) {
+    throw std::runtime_error("cudaMalloc failed");
+  }
+  cufftResult result = cufftPlan1d(&plan, fft_size, CUFFT_C2C, 1);
+  if (result != CUFFT_SUCCESS) {
+    throw std::runtime_error("CUFFT error: Plan creation failed");
+  }
 }
 
 /* Process the samples from a slot at a time */
@@ -53,25 +51,17 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
   uint32_t start_idx      = slot_idx % slots_per_subframe * symbols_per_slot;
   uint32_t current_offset = 0;
   for (uint32_t i = 0; i < symbols_per_slot; i++) {
-    uint32_t idx                  = start_idx + i;
+    uint32_t idx = start_idx + i;
+
     uint32_t cyclic_prefix_length = cp_length_list[idx];
+    current_offset += cyclic_prefix_length; // remove the cyclic prefix
+    cudaMemcpy(d_signal, buffer + current_offset, sizeof(cufftComplex) * fft_size, cudaMemcpyHostToDevice);
+    current_offset += ofdm_length;                         // proceeds after processing the OFDM symbol
+    cufftExecC2C(plan, d_signal, d_signal, CUFFT_FORWARD); // actually run the fft
 
-    /* Copy the data in to input buffer */
-    current_offset += cyclic_prefix_length;
-    memcpy(input, buffer + current_offset, ofdm_length * sizeof(cf_t));
-    // printf("Symbol %u\n", i);
-    // for (uint32_t j = 0; j < ofdm_length; j++) {
-    //   std::complex<float> srsran_c = reinterpret_cast<std::complex<float>&>(input[j]);
-    //   printf("%f + %fi\n", srsran_c.real(), srsran_c.imag());
-    // }
-    current_offset += ofdm_length;
-
-    /* Execute the FFT */
-    fft_execute(plan);
-
-    /* Copy the output to the ofdm_symbols */
-    // memcpy(ofdm_symbols + i * fft_size, output, fft_size * sizeof(cf_t));
-    memcpy(ofdm_symbols + i * nof_re, output + fft_size - half_subc, half_subc * sizeof(cf_t));
-    memcpy(ofdm_symbols + i * nof_re + half_subc, output, half_subc * sizeof(cf_t));
+    // Copy the result to OFDM symbols
+    cudaMemcpy(
+        ofdm_symbols + i * nof_re, d_signal + fft_size - half_subc, half_subc * sizeof(cf_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(ofdm_symbols + i * nof_re + half_subc, d_signal, half_subc * sizeof(cf_t), cudaMemcpyDeviceToHost);
   }
 }

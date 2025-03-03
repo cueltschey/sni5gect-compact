@@ -62,7 +62,14 @@ int main()
   /* Initialize slot cfg */
   srsran_slot_cfg_t slot_cfg = {.idx = slot_number};
   /* run ue_dl estimate fft */
-  srsran_ue_dl_nr_estimate_fft(&ue_dl, &slot_cfg);
+
+  auto start_cpu = std::chrono::high_resolution_clock::now();
+  for (uint32_t i = 0; i < 10000; i++) {
+    srsran_ue_dl_nr_estimate_fft(&ue_dl, &slot_cfg);
+  }
+  auto                          end_cpu             = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed_seconds_cpu = end_cpu - start_cpu;
+  std::cout << "CPU time: " << elapsed_seconds_cpu.count() << "s\n";
 
   char filename[64];
   sprintf(filename, "ofdm_srsran_fft%u", nof_sc);
@@ -71,7 +78,13 @@ int main()
   srsran_vec_cf_copy(ofdm_srsran, ue_dl.sf_symbols[0], nof_re);
 
   FFTProcessor fft_processor(config.sample_rate, scs, config.nof_prb);
-  fft_processor.process_samples(buffer, ue_dl.sf_symbols[0], slot_cfg.idx);
+  auto         start_gpu = std::chrono::high_resolution_clock::now();
+  for (uint32_t i = 0; i < 10000; i++) {
+    fft_processor.process_samples(buffer, ue_dl.sf_symbols[0], slot_cfg.idx);
+  }
+  auto                          end_gpu             = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed_seconds_gpu = end_gpu - start_gpu;
+  std::cout << "GPU time: " << elapsed_seconds_gpu.count() << "s\n";
 
   cf_t* ofdm_liqid = srsran_vec_cf_malloc(nof_re);
   srsran_vec_cf_copy(ofdm_liqid, ue_dl.sf_symbols[0], nof_re);

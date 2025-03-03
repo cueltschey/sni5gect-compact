@@ -107,6 +107,8 @@ target_link_libraries(recorder ${UHD_LIBRARIES} ${Boost_LIBRARIES} pthread)
 add_executable(scanner tools/scanner.cc src/source.cc src/utils.cc)
 target_link_libraries(scanner ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 
+set_source_files_properties(src/fft_processor.cc PROPERTIES LANGUAGE CUDA)
+
 add_executable(srsran_recorder tools/srsran_recorder.cc)
 target_link_libraries(srsran_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 add_executable(shadower

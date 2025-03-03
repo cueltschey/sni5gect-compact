@@ -31,7 +31,8 @@ endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 # Project setup
 ########################################################################
 cmake_minimum_required(VERSION 3.5)
-project( SRSRAN )
+project( SRSRAN LANGUAGES C CXX CUDA) 
+set(CMAKE_CUDA_ARCHITECTURES 60 70 75 80 86 90)
 message( STATUS "CMAKE_SYSTEM: " ${CMAKE_SYSTEM} )
 message( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR} )
 message( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
@@ -323,6 +324,14 @@ if(Backward_FOUND)
   else (BACKWARD_HAS_EXTERNAL_LIBRARIES)
     message(STATUS "Backward-cpp found, but external libraries are missing.")
   endif()
+endif()
+
+find_package(CUDAToolkit REQUIRED)
+if(CUDAToolkit_FOUND)
+  message(STATUS "CUDA found")
+  add_definitions(-DHAVE_CUDA)
+  include_directories(${CUDAToolkit_INCLUDE_DIRS})
+  link_directories(${CUDAToolkit_LIBRARY_DIR})
 endif()
 
 ########################################################################

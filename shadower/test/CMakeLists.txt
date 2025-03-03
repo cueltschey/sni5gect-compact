@@ -16,7 +16,7 @@ add_executable(syncer_test syncer_test.cc ${TestCommonSources}
 target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(sib_search_test sib_search_test.cc ${SHADOWER_DIR}/fft_processor.cc ${TestCommonSources})
-target_link_libraries(sib_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} liquid)
+target_link_libraries(sib_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} CUDA::cufft CUDA::cudart)
 
 add_executable(rach_msg2_test rach_msg2_test.cc ${TestCommonSources})
 target_link_libraries(rach_msg2_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
@@ -88,6 +88,4 @@ add_executable(registration_accept_constructor registration_accept_constructor.c
 target_link_libraries(registration_accept_constructor ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
 
 add_executable(fft_test fft_test.cc ${SHADOWER_DIR}/fft_processor.cc ${TestCommonSources})
-target_link_libraries(fft_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${FFT_LIBRARIES} liquid)
-
-
+target_link_libraries(fft_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${FFT_LIBRARIES} CUDA::cufft CUDA::cudart)
