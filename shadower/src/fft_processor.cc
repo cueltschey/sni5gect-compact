@@ -7,14 +7,14 @@ FFTProcessor::FFTProcessor(double sample_rate_, srsran_subcarrier_spacing_t scs_
   scs(scs_),
   two_pow_numerology(1 << scs),
   scs_khz((1 << scs) * 15),
-  nof_re(num_prbs_ * SRSRAN_NRE),
+  nof_sc(num_prbs_ * SRSRAN_NRE),
   slots_per_subframe(1 << scs),
   sf_len(sample_rate * SF_DURATION),
   symbols_per_subframe(symbols_per_slot * slots_per_subframe)
 {
   fft_size  = sf_len / scs_khz;
   half_fft  = fft_size / 2;
-  half_subc = nof_re / 2;
+  half_subc = nof_sc / 2;
   /* Calculate the duration in the unit of Tc */
   ofdm_units    = 2048.0 * K * 1.0 / two_pow_numerology;
   cp_units      = 144.0 * K * 1.0 / two_pow_numerology;
@@ -78,14 +78,27 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
   // Copy result back asynchronously
   cudaMemcpyAsync(
       h_pinned_buffer, d_signal, symbols_per_slot * fft_size * sizeof(cufftComplex), cudaMemcpyDeviceToHost, stream);
+  // for (uint32_t i = 0; i < symbols_per_slot; i++) {
+  //   cudaMemcpyAsync(h_pinned_buffer + i * nof_sc,
+  //                   d_signal + i * fft_size + fft_size - half_subc,
+  //                   fft_size * sizeof(cufftComplex),
+  //                   cudaMemcpyDeviceToHost,
+  //                   stream);
+  //   cudaMemcpyAsync(h_pinned_buffer + i * nof_sc + half_subc,
+  //                   d_signal + i * fft_size,
+  //                   half_subc * sizeof(cufftComplex),
+  //                   cudaMemcpyDeviceToHost,
+  //                   stream);
+  // }
 
   // Wait for all operations to complete
   cudaStreamSynchronize(stream);
 
   // Copy final output back to host
+  // memcpy(ofdm_symbols, h_pinned_buffer, symbols_per_slot * nof_sc * sizeof(cufftComplex));
   for (uint32_t i = 0; i < symbols_per_slot; i++) {
     // Copy the result to OFDM symbols
-    memcpy(ofdm_symbols + i * nof_re, h_pinned_buffer + i * fft_size + fft_size - half_subc, half_subc * sizeof(cf_t));
-    memcpy(ofdm_symbols + i * nof_re + half_subc, h_pinned_buffer + i * fft_size, half_subc * sizeof(cf_t));
+    memcpy(ofdm_symbols + i * nof_sc, h_pinned_buffer + i * fft_size + fft_size - half_subc, half_subc * sizeof(cf_t));
+    memcpy(ofdm_symbols + i * nof_sc + half_subc, h_pinned_buffer + i * fft_size, half_subc * sizeof(cf_t));
   }
 }

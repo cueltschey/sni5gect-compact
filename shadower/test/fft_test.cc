@@ -12,8 +12,6 @@
 std::string sample_file = "shadower/test/data/srsran/sib.fc32";
 #elif TEST_TYPE == 2
 std::string sample_file = "shadower/test/data/ssb.fc32";
-#elif TEST_TYPE == 3
-std::string sample_file = "shadower/test/data/srsran/sib.fc32";
 #endif // TEST_TYPE
 uint32_t test_round = 1;
 
@@ -70,7 +68,7 @@ int main()
   // sprintf(filename, "ofdm_output_fft%u", fft_processor.fft_size);
   // write_record_to_file(output_ofdm_symbols, fft_processor.fft_size * 14, filename);
 
-  sprintf(filename, "ofdm_output_fft%u", fft_processor.nof_re);
-  write_record_to_file(output_ofdm_symbols, fft_processor.nof_re * 14, filename);
+  sprintf(filename, "ofdm_output_fft%u", fft_processor.nof_sc);
+  write_record_to_file(output_ofdm_symbols, fft_processor.nof_sc * 14, filename);
   return 0;
 }

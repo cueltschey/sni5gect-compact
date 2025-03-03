@@ -27,7 +27,7 @@ public:
   cudaStream_t  stream;          // CUDA stream for asynchronous data transfer
 
   uint32_t fft_size; // FFT size
-  uint32_t nof_re;   // Number of subcarriers
+  uint32_t nof_sc;   // Number of subcarriers
 
 private:
   srsran_subcarrier_spacing_t scs;
