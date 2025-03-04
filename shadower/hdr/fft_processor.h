@@ -1,16 +1,17 @@
 #ifndef FFT_PROCESSOR_H
 #define FFT_PROCESSOR_H
 #include "srsran/srsran.h"
+#include <complex>
+#include <cublas_v2.h>
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <cufft.h>
-// #include <liquid/liquid.h>
 #include <vector>
 
 class FFTProcessor
 {
 public:
-  FFTProcessor(double sample_rate_, srsran_subcarrier_spacing_t scs_, uint32_t num_prbs_);
+  FFTProcessor(double sample_rate_, srsran_subcarrier_spacing_t scs_, uint32_t num_prbs_, double center_freq);
   ~FFTProcessor()
   {
     if (d_signal) {
@@ -21,10 +22,6 @@ public:
     }
   }
   void process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t slot_idx);
-
-  cufftComplex* d_signal;        // Allocate GPU memory
-  cufftComplex* h_pinned_buffer; // Pin memory for faster data transfer
-  cudaStream_t  stream;          // CUDA stream for asynchronous data transfer
 
   uint32_t fft_size; // FFT size
   uint32_t nof_sc;   // Number of subcarriers
@@ -54,7 +51,13 @@ private:
 
   uint32_t sf_len;
 
-  std::vector<uint32_t> cp_length_list;
-  cufftHandle           plan = {};
+  std::vector<uint32_t>              cp_length_list;
+  std::vector<cf_t>                  phase_compensation_conj_list;
+
+  /* Components used to do FFT using cuda */
+  cufftHandle   plan = {};
+  cufftComplex* d_signal;        // Allocate GPU memory
+  cufftComplex* h_pinned_buffer; // Pin memory for faster data transfer
+  cudaStream_t  stream;          // CUDA stream for asynchronous data transfer
 };
 #endif // FFT_PROCESSO  R_H

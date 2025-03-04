@@ -2,7 +2,10 @@
 #include "shadower/hdr/constants.h"
 #include <chrono>
 #include <cmath>
-FFTProcessor::FFTProcessor(double sample_rate_, srsran_subcarrier_spacing_t scs_, uint32_t num_prbs_) :
+FFTProcessor::FFTProcessor(double                      sample_rate_,
+                           srsran_subcarrier_spacing_t scs_,
+                           uint32_t                    num_prbs_,
+                           double                      center_freq) :
   sample_rate(sample_rate_),
   scs(scs_),
   two_pow_numerology(1 << scs),
@@ -35,6 +38,23 @@ FFTProcessor::FFTProcessor(double sample_rate_, srsran_subcarrier_spacing_t scs_
   // Long CP list for 0 and 7 * 2^(miu - 1)
   cp_length_list[0]                      = long_cp_length;
   cp_length_list[7 * two_pow_numerology] = long_cp_length;
+
+  uint32_t             count = 0;
+  std::complex<double> I(0, 1);
+  phase_compensation_conj_list.resize(symbols_per_subframe);
+  for (uint32_t l = 0; l < symbols_per_subframe; l++) {
+    uint32_t cp_len = cp_length_list[l];
+    count += cp_len;
+    double t_start   = (double)count / sample_rate;
+    double phase_rad = -2.0 * M_PI * center_freq * t_start;
+
+    std::complex<double> phase_comp      = std::exp(I * phase_rad);
+    std::complex<double> phase_comp_conj = std::conj(phase_comp);
+    phase_compensation_conj_list[l] =
+        static_cast<float>(phase_comp_conj.real()) + static_cast<float>(phase_comp_conj.imag()) * 1.0if;
+    count += ofdm_length;
+  }
+
   cudaError_t error = cudaMalloc((void**)&d_signal, symbols_per_slot * fft_size * sizeof(cufftComplex));
   if (error != cudaError::cudaSuccess) {
     throw std::runtime_error("cudaMalloc failed");
@@ -87,5 +107,7 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
     // Copy the result to OFDM symbols
     memcpy(ofdm_symbols + i * nof_sc, h_pinned_buffer + i * fft_size + fft_size - half_subc, half_subc * sizeof(cf_t));
     memcpy(ofdm_symbols + i * nof_sc + half_subc, h_pinned_buffer + i * fft_size, half_subc * sizeof(cf_t));
+    srsran_vec_sc_prod_ccc(
+        ofdm_symbols + i * nof_sc, phase_compensation_conj_list[start_idx + i], ofdm_symbols + i * nof_sc, nof_sc);
   }
 }
