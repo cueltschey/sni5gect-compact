@@ -17,6 +17,9 @@ uint32_t    slot_number = 1;
 std::string sample_file = "shadower/test/data/sib1.fc32";
 uint32_t    slot_number = 11604;
 float       cfo         = 0;
+#elif TEST_TYPE == 3
+std::string sample_file = "shadower/test/data/srsran-n78-40MHz/sib.fc32";
+uint32_t    slot_number = 1;
 #endif // TEST_TYPE
 int main()
 {
@@ -52,7 +55,7 @@ int main()
     logger.error("Failed to load data from %s", sample_file.c_str());
     return -1;
   }
-#if TEST_TYPE == 1
+#if TEST_TYPE == 1 || TEST_TYPE == 3
   /* copy samples to ue_dl processing buffer */
   srsran_vec_cf_copy(buffer, samples.data() + slot_len, slot_len);
 #elif TEST_TYPE == 2

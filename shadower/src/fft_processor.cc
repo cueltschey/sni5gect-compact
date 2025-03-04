@@ -78,24 +78,11 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
   // Copy result back asynchronously
   cudaMemcpyAsync(
       h_pinned_buffer, d_signal, symbols_per_slot * fft_size * sizeof(cufftComplex), cudaMemcpyDeviceToHost, stream);
-  // for (uint32_t i = 0; i < symbols_per_slot; i++) {
-  //   cudaMemcpyAsync(h_pinned_buffer + i * nof_sc,
-  //                   d_signal + i * fft_size + fft_size - half_subc,
-  //                   fft_size * sizeof(cufftComplex),
-  //                   cudaMemcpyDeviceToHost,
-  //                   stream);
-  //   cudaMemcpyAsync(h_pinned_buffer + i * nof_sc + half_subc,
-  //                   d_signal + i * fft_size,
-  //                   half_subc * sizeof(cufftComplex),
-  //                   cudaMemcpyDeviceToHost,
-  //                   stream);
-  // }
 
   // Wait for all operations to complete
   cudaStreamSynchronize(stream);
 
   // Copy final output back to host
-  // memcpy(ofdm_symbols, h_pinned_buffer, symbols_per_slot * nof_sc * sizeof(cufftComplex));
   for (uint32_t i = 0; i < symbols_per_slot; i++) {
     // Copy the result to OFDM symbols
     memcpy(ofdm_symbols + i * nof_sc, h_pinned_buffer + i * fft_size + fft_size - half_subc, half_subc * sizeof(cf_t));

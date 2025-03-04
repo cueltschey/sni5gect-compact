@@ -2,6 +2,7 @@
 #define UE_DL_WORKER
 #include "shadower/hdr/arg_parser.h"
 #include "shadower/hdr/exploit.h"
+#include "shadower/hdr/fft_processor.h"
 #include "shadower/hdr/task.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/asn1/rrc_nr.h"
@@ -52,7 +53,8 @@ private:
   ShadowerConfig&                   config;
   srsue::nr::state&                 phy_state;
   std::shared_ptr<srsran::mac_pcap> pcap_writer;
-  srsran::phy_cfg_nr_t              phy_cfg = {};
+  srsran::phy_cfg_nr_t              phy_cfg       = {};
+  FFTProcessor*                     fft_processor = nullptr;
 
   double             srate             = 0;
   uint32_t           sf_len            = 0;

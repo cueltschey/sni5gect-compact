@@ -18,6 +18,9 @@ UEDLWorker::UEDLWorker(srslog::basic_logger&             logger_,
   wd_worker(wd_worker_),
   exploit(exploit_)
 {
+  if (config.enable_gpu_acceleration) {
+    fft_processor = new FFTProcessor(config.sample_rate, config.scs_common, config.nof_prb);
+  }
 }
 
 UEDLWorker::~UEDLWorker()
@@ -109,7 +112,11 @@ void UEDLWorker::work_imp()
     /* only copy half of the subframe to the buffer */
     srsran_vec_cf_copy(buffer, task->buffer->data() + slot_in_sf * slot_len, slot_len);
     /* estimate FFT will run on first slot */
-    srsran_ue_dl_nr_estimate_fft(&ue_dl, &slot_cfg);
+    if (config.enable_gpu_acceleration) {
+      fft_processor->process_samples(buffer, ue_dl.sf_symbols[0], slot_cfg.idx);
+    } else {
+      srsran_ue_dl_nr_estimate_fft(&ue_dl, &slot_cfg);
+    }
     /* Estimate PDCCH channel and search for both dci ul and dci dl */
     ue_dl_dci_search(ue_dl, phy_cfg, slot_cfg, rnti, rnti_type, phy_state, logger, task->task_idx);
     /* PDSCH decoding */
