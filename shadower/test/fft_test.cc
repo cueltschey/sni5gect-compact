@@ -43,7 +43,7 @@ int main()
 
   /* CPU processing of samples */
   auto start_cpu = std::chrono::high_resolution_clock::now();
-  for (uint32_t i = 0; i < 10000; i++) {
+  for (uint32_t i = 0; i < test_round; i++) {
     srsran_ue_dl_nr_estimate_fft(&ue_dl, &slot_cfg);
   }
   auto                          end_cpu             = std::chrono::high_resolution_clock::now();
@@ -54,7 +54,7 @@ int main()
   cf_t*        output_ofdm_symbols = srsran_vec_cf_malloc(fft_processor.fft_size * 14);
 
   auto start_gpu = std::chrono::high_resolution_clock::now();
-  for (uint32_t i = 0; i < 10000; i++) {
+  for (uint32_t i = 0; i < test_round; i++) {
     fft_processor.process_samples(samples.data() + slot_len, output_ofdm_symbols, 1);
   }
   auto                          end_gpu             = std::chrono::high_resolution_clock::now();

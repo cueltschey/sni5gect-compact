@@ -125,9 +125,10 @@ add_executable(shadower
   src/ue_dl_worker.cc
   src/gnb_ul_worker.cc
   src/msg_helper.cc
+  src/fft_processor.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
-target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
+target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector CUDA::cufft CUDA::cudart)
 
 include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src ${WDISSECTOR_INCLUDES})
 set(SHADOWER_DIR ${CMAKE_HOME_DIRECTORY}/shadower/src)
