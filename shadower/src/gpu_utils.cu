@@ -12,7 +12,6 @@ gpu_vec_sc_prod_ccc(cufftComplex* d_signal, cufftComplex* d_phase_list, int fft_
   if (idx < fft_size) {
     int          index = symbol_idx * fft_size + idx;
     cufftComplex phase = d_phase_list[symbol_idx];
-
     // Complex multiplication: result = d_signal * phase
     cufftComplex result;
     result.x        = d_signal[index].x * phase.x - d_signal[index].y * phase.y;
@@ -22,15 +21,12 @@ gpu_vec_sc_prod_ccc(cufftComplex* d_signal, cufftComplex* d_phase_list, int fft_
 }
 
 // Function to launch the kernel
-void launch_gpu_vec_sc_prod_ccc(cufftComplex* d_signal,
-                                cufftComplex* d_phase_list,
-                                int           fft_size,
-                                int           symbols_per_slot,
-                                cudaStream_t  stream)
+void launch_gpu_vec_sc_prod_ccc(cufftComplex* d_signal, cufftComplex* d_phase_list, int fft_size, int symbols_per_slot)
 {
   dim3 threadsPerBlock(256);
   dim3 numBlocks((fft_size + threadsPerBlock.x - 1) / threadsPerBlock.x, symbols_per_slot);
   // clang-format off
-  gpu_vec_sc_prod_ccc<<<numBlocks, threadsPerBlock, 0, stream>>>(d_signal, d_phase_list, fft_size, symbols_per_slot);
+  gpu_vec_sc_prod_ccc<<<numBlocks, threadsPerBlock>>>(d_signal, d_phase_list, fft_size, symbols_per_slot);
   // clang-format on
+  // cudaDeviceSynchronize();
 }

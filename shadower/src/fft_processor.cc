@@ -106,7 +106,7 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
   cufftExecC2C(plan, d_signal, d_signal, CUFFT_FORWARD);
 
   // Apply phase compensation
-  launch_gpu_vec_sc_prod_ccc(d_signal, phase_compensation_list_gpu, fft_size, symbols_per_slot, stream);
+  launch_gpu_vec_sc_prod_ccc(d_signal, phase_compensation_list_gpu, fft_size, symbols_per_slot);
 
   // Copy result back asynchronously
   cudaMemcpyAsync(
