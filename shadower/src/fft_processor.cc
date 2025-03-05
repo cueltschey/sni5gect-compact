@@ -1,5 +1,6 @@
 #include "shadower/hdr/fft_processor.h"
 #include "shadower/hdr/constants.h"
+#include "shadower/hdr/gpu_utils.cuh"
 #include <chrono>
 #include <cmath>
 FFTProcessor::FFTProcessor(double                      sample_rate_,
@@ -69,6 +70,15 @@ FFTProcessor::FFTProcessor(double                      sample_rate_,
     throw std::runtime_error("CUFFT error: Plan creation failed");
   }
 
+  cudaError_t error3 = cudaMalloc((void**)&phase_compensation_list_gpu, symbols_per_slot * sizeof(cufftComplex));
+  if (error3 != cudaError::cudaSuccess) {
+    throw std::runtime_error("cudaMalloc failed");
+  }
+  cudaMemcpy(phase_compensation_list_gpu,
+             phase_compensation_conj_list.data(),
+             symbols_per_slot * sizeof(cufftComplex),
+             cudaMemcpyHostToDevice);
+
   cudaStreamCreate(&stream);
   cufftSetStream(plan, stream);
 }
@@ -95,6 +105,9 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
   // Run fft
   cufftExecC2C(plan, d_signal, d_signal, CUFFT_FORWARD);
 
+  // Apply phase compensation
+  launch_gpu_vec_sc_prod_ccc(d_signal, phase_compensation_list_gpu, fft_size, symbols_per_slot);
+
   // Copy result back asynchronously
   cudaMemcpyAsync(
       h_pinned_buffer, d_signal, symbols_per_slot * fft_size * sizeof(cufftComplex), cudaMemcpyDeviceToHost, stream);
@@ -107,7 +120,5 @@ void FFTProcessor::process_samples(cf_t* buffer, cf_t* ofdm_symbols, uint32_t sl
     // Copy the result to OFDM symbols
     memcpy(ofdm_symbols + i * nof_sc, h_pinned_buffer + i * fft_size + fft_size - half_subc, half_subc * sizeof(cf_t));
     memcpy(ofdm_symbols + i * nof_sc + half_subc, h_pinned_buffer + i * fft_size, half_subc * sizeof(cf_t));
-    srsran_vec_sc_prod_ccc(
-        ofdm_symbols + i * nof_sc, phase_compensation_conj_list[start_idx + i], ofdm_symbols + i * nof_sc, nof_sc);
   }
 }

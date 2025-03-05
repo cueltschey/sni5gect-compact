@@ -19,7 +19,7 @@ UEDLWorker::UEDLWorker(srslog::basic_logger&             logger_,
   exploit(exploit_)
 {
   if (config.enable_gpu_acceleration) {
-    fft_processor = new FFTProcessor(config.sample_rate, config.scs_common, config.nof_prb);
+    fft_processor = new FFTProcessor(config.sample_rate, config.scs_common, config.nof_prb, config.dl_freq);
   }
 }
 

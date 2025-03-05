@@ -107,7 +107,10 @@ target_link_libraries(recorder ${UHD_LIBRARIES} ${Boost_LIBRARIES} pthread)
 add_executable(scanner tools/scanner.cc src/source.cc src/utils.cc)
 target_link_libraries(scanner ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 
-set_source_files_properties(src/fft_processor.cc PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/gpu_utils.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(hdr/gpu_utils.cuh PROPERTIES LANGUAGE CUDA)
+add_library(gpu_utils src/gpu_utils.cu hdr/gpu_utils.cuh)
+target_link_libraries(gpu_utils CUDA::cufft CUDA::cudart)
 
 add_executable(srsran_recorder tools/srsran_recorder.cc)
 target_link_libraries(srsran_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
@@ -128,7 +131,7 @@ add_executable(shadower
   src/fft_processor.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
-target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector CUDA::cufft CUDA::cudart)
+target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector gpu_utils CUDA::cufft CUDA::cudart)
 
 include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src ${WDISSECTOR_INCLUDES})
 set(SHADOWER_DIR ${CMAKE_HOME_DIRECTORY}/shadower/src)

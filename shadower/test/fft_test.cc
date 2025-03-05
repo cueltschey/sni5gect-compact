@@ -52,7 +52,7 @@ int main()
   std::chrono::duration<double> elapsed_seconds_cpu = end_cpu - start_cpu;
   std::cout << "CPU time: " << elapsed_seconds_cpu.count() << "s\n";
 
-  FFTProcessor fft_processor(config.sample_rate, scs, config.nof_prb);
+  FFTProcessor fft_processor(srate, scs, nof_prb, dl_freq);
   cf_t*        output_ofdm_symbols = srsran_vec_cf_malloc(fft_processor.fft_size * 14);
 
   auto start_gpu = std::chrono::high_resolution_clock::now();

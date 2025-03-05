@@ -2,7 +2,6 @@
 #define FFT_PROCESSOR_H
 #include "srsran/srsran.h"
 #include <complex>
-#include <cublas_v2.h>
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <cufft.h>
@@ -51,8 +50,9 @@ private:
 
   uint32_t sf_len;
 
-  std::vector<uint32_t>              cp_length_list;
-  std::vector<cf_t>                  phase_compensation_conj_list;
+  std::vector<uint32_t> cp_length_list;
+  std::vector<cf_t>     phase_compensation_conj_list;
+  cufftComplex*         phase_compensation_list_gpu;
 
   /* Components used to do FFT using cuda */
   cufftHandle   plan = {};
@@ -60,4 +60,4 @@ private:
   cufftComplex* h_pinned_buffer; // Pin memory for faster data transfer
   cudaStream_t  stream;          // CUDA stream for asynchronous data transfer
 };
-#endif // FFT_PROCESSO  R_H
+#endif // FFT_PROCESSOR_H

@@ -74,7 +74,7 @@ int main()
   cf_t* ofdm_srsran = srsran_vec_cf_malloc(nof_re);
   srsran_vec_cf_copy(ofdm_srsran, ue_dl.sf_symbols[0], nof_re);
 
-  FFTProcessor fft_processor(config.sample_rate, scs, config.nof_prb);
+  FFTProcessor fft_processor(config.sample_rate, scs, config.nof_prb, config.dl_freq);
   fft_processor.process_samples(buffer, ue_dl.sf_symbols[0], slot_cfg.idx);
 
   cf_t* ofdm_liqid = srsran_vec_cf_malloc(nof_re);
