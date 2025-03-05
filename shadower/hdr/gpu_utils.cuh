@@ -3,6 +3,10 @@
 
 #include <cufft.h>
 
-void launch_gpu_vec_sc_prod_ccc(cufftComplex* d_signal, cufftComplex* d_phase_list, int fft_size, int symbols_per_slot);
+void launch_gpu_vec_sc_prod_ccc(cufftComplex* d_signal,
+                                cufftComplex* d_phase_list,
+                                int           fft_size,
+                                int           symbols_per_slot,
+                                cudaStream_t  stream);
 
 #endif // GPU_UTILS_H
