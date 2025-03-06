@@ -7,10 +7,37 @@
 #include "srsran/common/pcap.h"
 #include "srsran/mac/mac_rar_pdu_nr.h"
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <iomanip>
 #include <pthread.h>
 #include <sched.h>
 #include <sstream>
+#include <stdlib.h>
+#include <sys/syscall.h>
+#include <sys/utsname.h>
+#include <unistd.h>
+
+#define IOPRIO_CLASS_SHIFT 13
+#define IOPRIO_PRIO_VALUE(class, data) (((class) << IOPRIO_CLASS_SHIFT) | data)
+
+enum {
+  IOPRIO_CLASS_NONE,
+  IOPRIO_CLASS_RT,
+  IOPRIO_CLASS_BE,
+  IOPRIO_CLASS_IDLE,
+};
+
+enum {
+  IOPRIO_WHO_PROCESS = 1,
+  IOPRIO_WHO_PGRP,
+  IOPRIO_WHO_USER,
+};
+
+static inline int ioprio_set(int which, int who, int ioprio)
+{
+  return syscall(SYS_ioprio_set, which, who, ioprio);
+}
+
 /* Initialize logger */
 srslog::basic_logger& srslog_init(ShadowerConfig* config)
 {
@@ -124,6 +151,50 @@ void set_thread_priority(std::thread& t, int priority)
   if (pthread_setschedparam(native_handle, SCHED_FIFO, &param) != 0) {
     std::cerr << "Failed to set thread priority" << std::endl;
   }
+}
+
+bool enable_rt_scheduler(uint8_t use_full_time)
+{
+  // Configure hard limits
+  system(("prlimit --rtprio=unlimited:unlimited --pid " + std::to_string(getpid())).c_str());
+  system(("prlimit --nice=unlimited:unlimited --pid " + std::to_string(getpid())).c_str());
+
+  // Set schedule priority
+  struct sched_param sp;
+  int                policy = 0;
+
+  sp.sched_priority     = sched_get_priority_max(SCHED_FIFO);
+  pthread_t this_thread = pthread_self();
+
+  int ret = sched_setscheduler(0, SCHED_FIFO, &sp);
+  if (ret) {
+    puts("Error: sched_setscheduler: Failed to change scheduler to RR");
+    return false;
+  }
+
+  ret = pthread_getschedparam(this_thread, &policy, &sp);
+  if (ret) {
+    puts("Error: Couldn't retrieve real-time scheduling parameters");
+    return false;
+  }
+
+  // LOG2G("Thread priority is ", sp.sched_priority);
+
+  // Allow thread to be cancelable
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+  // Set IO prioriy
+  ioprio_set(IOPRIO_WHO_PROCESS, 0, IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, 0));
+
+  if (use_full_time) {
+    int fd = ::open("/proc/sys/kernel/sched_rt_runtime_us", O_RDWR);
+    if (fd) {
+      if (::write(fd, "-1", 2) > 0)
+        puts("/proc/sys/kernel/sched_rt_runtime_us = -1");
+    }
+  }
+
+  return true;
 }
 
 /* Add the required UDP header for wdissector */
@@ -636,6 +707,8 @@ void ue_dl_dci_search(srsran_ue_dl_nr_t&    ue_dl,
                       uint32_t              task_idx)
 {
   char dci_str[256];
+  ue_dl.num_dl_dci = 0;
+  ue_dl.num_ul_dci = 0;
   /* Estimate PDCCH channel for every configured CORESET for each slot */
   for (uint32_t i = 0; i < SRSRAN_UE_DL_NR_MAX_NOF_CORESET; i++) {
     if (ue_dl.cfg.coreset_present[i]) {
@@ -646,6 +719,7 @@ void ue_dl_dci_search(srsran_ue_dl_nr_t&    ue_dl,
   std::array<srsran_dci_dl_nr_t, SRSRAN_SEARCH_SPACE_MAX_NOF_CANDIDATES_NR> dci_dl = {};
   int                                                                       num_dci_dl =
       srsran_ue_dl_nr_find_dl_dci(&ue_dl, &slot_cfg, rnti, rnti_type, dci_dl.data(), (uint32_t)dci_dl.size());
+  ue_dl.num_dl_dci = num_dci_dl;
   for (int i = 0; i < num_dci_dl; i++) {
     phy_state.set_dl_pending_grant(phy_cfg, slot_cfg, dci_dl[i]);
     if (logger.debug.enabled()) {
@@ -657,6 +731,7 @@ void ue_dl_dci_search(srsran_ue_dl_nr_t&    ue_dl,
   std::array<srsran_dci_ul_nr_t, SRSRAN_SEARCH_SPACE_MAX_NOF_CANDIDATES_NR> dci_ul = {};
   int                                                                       num_dci_ul =
       srsran_ue_dl_nr_find_ul_dci(&ue_dl, &slot_cfg, rnti, rnti_type, dci_ul.data(), (uint32_t)dci_ul.size());
+  ue_dl.num_ul_dci = num_dci_ul;
   for (int i = 0; i < num_dci_ul; i++) {
     phy_state.set_ul_pending_grant(phy_cfg, slot_cfg, dci_ul[i]);
     if (logger.debug.enabled()) {

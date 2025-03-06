@@ -4,6 +4,7 @@
 #include "shadower/hdr/safe_queue.h"
 #include "shadower/hdr/source.h"
 #include "shadower/hdr/task.h"
+#include "shadower/hdr/trace_samples.h"
 #include "srsran/common/threads.h"
 #include "srsran/srslog/srslog.h"
 #include <atomic>
@@ -39,16 +40,19 @@ public:
   /* retrieve tti and timestamp */
   void get_tti(uint32_t* idx, srsran_timestamp_t* ts);
 
+  uint32_t     ncellid = 0;
+  TraceSamples tracer_status;
+
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("syncer", true);
 
-  double   srate;
-  uint32_t sf_len;
-  uint32_t slot_per_sf;
-  Source*  source = nullptr;
+  double       srate;
+  uint32_t     sf_len;
+  uint32_t     slot_per_sf;
+  Source*      source = nullptr;
+  TraceSamples tracer_sib1;
 
   float    cfo_hz          = 0;
-  uint32_t ncellid         = 0;
   uint32_t task_idx        = 0;
   int32_t  samples_delayed = 0; /* Indicate if how many samples remaining in current slot */
 

@@ -1,5 +1,7 @@
+#include "shadower/hdr/arg_parser.h"
 #include "shadower/hdr/exploit.h"
 #include "shadower/hdr/scheduler.h"
+#include "shadower/hdr/source.h"
 #include "shadower/hdr/syncer.h"
 #include "srsran/srslog/srslog.h"
 // Configuration for the overshadower
@@ -16,6 +18,9 @@ int main(int argc, char* argv[])
   }
   srslog::basic_logger& logger = srslog_init(&config);
   logger.set_level(config.log_level);
+
+  // Wait 100ms to allow the logger to initialize
+  usleep(100000);
 
   // Initialize the source based on the configuration
   if (config.source_type == "file") {

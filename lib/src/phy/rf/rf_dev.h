@@ -52,6 +52,17 @@ static srsran_rf_plugin_t plugin_soapy = {"", NULL, &srsran_rf_dev_soapy};
 #endif
 #endif
 
+/* Define implementation for LimeSuiteNG */
+#ifdef ENABLE_LIMESUITENG
+#ifdef ENABLE_RF_PLUGINS
+static srsran_rf_plugin_t plugin_limesuiteng = {"libsrsran_rf_limesuiteng.so", NULL, NULL};
+#else
+#include "rf_limesuiteng_imp.h"
+static srsran_rf_plugin_t plugin_limesuiteng = {"", NULL, &srsran_rf_dev_limesuiteng};
+#endif
+#endif
+
+
 /* Define implementation for ZeroMQ */
 #ifdef ENABLE_ZEROMQ
 #ifdef ENABLE_RF_PLUGINS
@@ -107,6 +118,9 @@ static srsran_rf_plugin_t* rf_plugins[] = {
 #endif
 #ifdef ENABLE_BLADERF
     &plugin_blade,
+#endif
+#ifdef ENABLE_LIMESUITENG
+    &plugin_limesuiteng,
 #endif
 #ifdef ENABLE_ZEROMQ
     &plugin_zmq,

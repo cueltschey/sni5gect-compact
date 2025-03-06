@@ -30,9 +30,9 @@ void WDWorker::process(uint8_t*    data,
   const char* summary = wd_packet_summary(wd);
   if (summary) {
     if (direction == DL) {
-      logger.info(GREEN "%u [slot:%u] %s" RESET, rnti, slot_idx, summary);
+      logger.info(GREEN "%u [S:%u] --> [P:%s] %s" RESET, rnti, slot_idx, wd_packet_protocol(wd), summary);
     } else {
-      logger.info(BLUE "%u [slot:%u] %s" RESET, rnti, slot_idx, summary);
+      logger.info(BLUE "%u [S:%u] <-- [P:%s] %s" RESET, rnti, slot_idx, wd_packet_protocol(wd), summary);
     }
   }
   /* Run post dissection, process after packet is dissected */

@@ -22,6 +22,7 @@
 #include "srsran/common/mac_pcap.h"
 #include "srsran/common/standard_streams.h"
 #include "srsran/common/threads.h"
+#include <boost/filesystem.hpp>
 
 namespace srsran {
 mac_pcap::mac_pcap() : mac_pcap_base() {}
@@ -41,6 +42,16 @@ uint32_t mac_pcap::open(std::string filename_, uint32_t ue_id_)
 
   // set UDP DLT
   dlt       = UDP_DLT;
+  
+  logger.info("Creating MAC PCAP file: \"%s\"", filename_);
+  boost::filesystem::path path(filename_);
+  const char* dir_path = path.parent_path().c_str();
+  int res = system(("mkdir -p " + std::string(dir_path)).c_str());
+  if (res != 0) {
+    logger.error("Failed to create directory %s", dir_path);
+    return SRSRAN_ERROR;
+  }
+
   pcap_file = DLT_PCAP_Open(dlt, filename_.c_str());
   if (pcap_file == nullptr) {
     logger.error("Couldn't open %s to write PCAP", filename_.c_str());

@@ -27,9 +27,6 @@ int main()
   source                         = file_source(config);
   cf_t*              test_buffer = srsran_vec_cf_malloc(sf_len);
   srsran_timestamp_t ts          = {};
-  source->receive(test_buffer, sf_len, &ts);
-  source->send(test_buffer, sf_len, ts);
-  source->close();
 
   /* Test the SDR source */
   cf_t* tx_buffer = srsran_vec_cf_malloc(sf_len);

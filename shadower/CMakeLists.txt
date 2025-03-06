@@ -24,7 +24,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_link_options("-fuse-ld=lld-15")
-
+# RPATH
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+set(CMAKE_BUILD_RPATH $ORIGIN bin)
 
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost required to compile srsUE and ")
@@ -73,7 +75,7 @@ if(GLIB_FOUND)
   message("C Flags: ${GLIB_CFLAGS}")
 endif()
 
-set(WDISSECTOR_PATH ${PROJECT_SOURCE_DIR}/../wdissector)
+set(WDISSECTOR_PATH ${PROJECT_SOURCE_DIR}/wdissector)
 set(WDISSECTOR_INCLUDES
   ${GLIB_INCLUDE_DIRS}
   ${WDISSECTOR_PATH}/src/
@@ -124,8 +126,8 @@ target_link_libraries(scanner uhd_source ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 
 add_executable(srsran_recorder tools/srsran_recorder.cc)
 target_link_libraries(srsran_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
-add_executable(shadower
-  main.cc
+add_executable(shadower 
+  main.cc 
   src/syncer.cc
   src/scheduler.cc
   src/utils.cc
@@ -137,6 +139,8 @@ add_executable(shadower
   src/ue_dl_worker.cc
   src/gnb_ul_worker.cc
   src/msg_helper.cc
+  src/ring_buffer.cc
+  src/trace_samples.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
 target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${Boost_LIBRARIES} wdissector)
