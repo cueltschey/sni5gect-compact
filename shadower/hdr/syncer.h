@@ -8,6 +8,7 @@
 #include "srsran/srslog/srslog.h"
 #include <atomic>
 #include <queue>
+#include <thread>
 
 struct syncer_args_t {
   double                      srate;

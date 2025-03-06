@@ -1,9 +1,10 @@
+#include "shadower/hdr/constants.h"
 #include "shadower/hdr/source.h"
-
-double      sample_rate     = 61.44e6;
-double      center_freq     = 3424.5e6;
-std::string source_filename = "shadower/test/data/sib1.fc32";
-std::string sdr_args        = "type=b200,master_clock_rate=61.44e6,clock=internal";
+#include "shadower/hdr/utils.h"
+double      sample_rate     = 23.04e6;
+double      center_freq     = 3427.5e6;
+std::string source_filename = "shadower/test/data/srsran/sib.fc32";
+std::string sdr_args        = "type=b200";
 uint32_t    rx_gain         = 40;
 uint32_t    tx_gain         = 80;
 float       send_delay      = 2e-3;
@@ -15,10 +16,15 @@ int main()
   logger.set_level(srslog::basic_levels::debug);
 
   /* Test the file source */
-  Source*  source;
-  uint32_t sf_len                = sample_rate * SF_DURATION;
-  uint32_t slot_len              = sf_len / 2;
-  source                         = new FileSource(source_filename.c_str(), sample_rate);
+  Source*        source;
+  uint32_t       sf_len          = sample_rate * SF_DURATION;
+  uint32_t       slot_len        = sf_len / 2;
+  ShadowerConfig config          = {};
+  config.source_type             = "file";
+  config.source_params           = source_filename;
+  config.sample_rate             = sample_rate;
+  create_source_t file_source    = load_source(file_source_module_path);
+  source                         = file_source(config);
   cf_t*              test_buffer = srsran_vec_cf_malloc(sf_len);
   srsran_timestamp_t ts          = {};
   source->receive(test_buffer, sf_len, &ts);
@@ -31,8 +37,14 @@ int main()
     logger.error("Error loading samples\n");
     return -1;
   }
-  char filename[64];
-  source = new SDRSource(sdr_args, sample_rate, center_freq, center_freq, rx_gain, tx_gain);
+  char            filename[64];
+  create_source_t uhd_source = load_source(uhd_source_module_path);
+  config.source_params       = sdr_args;
+  config.dl_freq             = center_freq;
+  config.ul_freq             = center_freq;
+  config.rx_gain             = rx_gain;
+  config.tx_gain             = tx_gain;
+  source                     = uhd_source(config);
   for (uint32_t i = 0; i < 50; i++) {
     sprintf(filename, "received_data_%u", i);
     /* Receive the samples again */

@@ -101,11 +101,26 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_definitions(-DDBG)
 endif()
 
+# File source 
+add_library(file_source SHARED src/file_source.cc src/utils.cc)
+
+# UHD source
+if (ENABLE_UHD)
+  add_library(uhd_source SHARED src/uhd_source.cc src/utils.cc)
+  target_link_libraries(uhd_source ${UHD_LIBRARIES} ${Boost_LIBRARIES})
+endif(ENABLE_UHD)
+
+# Lime SDR source
+if (ENABLE_LIMESUITENG)
+  add_library(limesdr_source SHARED src/limesdr_source.cc src/utils.cc)
+  target_link_libraries(limesdr_source limesuiteng::limesuiteng)
+endif(ENABLE_LIMESUITENG)
+
 add_executable(recorder tools/recorder.cc)
 target_link_libraries(recorder ${UHD_LIBRARIES} ${Boost_LIBRARIES} pthread)
 
-add_executable(scanner tools/scanner.cc src/source.cc src/utils.cc)
-target_link_libraries(scanner ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
+add_executable(scanner tools/scanner.cc src/utils.cc)
+target_link_libraries(scanner uhd_source ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 
 add_executable(srsran_recorder tools/srsran_recorder.cc)
 target_link_libraries(srsran_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
@@ -113,7 +128,6 @@ add_executable(shadower
   main.cc
   src/syncer.cc
   src/scheduler.cc
-  src/source.cc
   src/utils.cc
   src/thread_pool.cc
   src/broadcast_worker.cc
@@ -125,9 +139,9 @@ add_executable(shadower
   src/msg_helper.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
-target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
-
+target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${Boost_LIBRARIES} wdissector)
 include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src ${WDISSECTOR_INCLUDES})
+
 set(SHADOWER_DIR ${CMAKE_HOME_DIRECTORY}/shadower/src)
 add_subdirectory(test)
 add_subdirectory(modules)

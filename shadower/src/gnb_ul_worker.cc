@@ -121,7 +121,7 @@ void GNBULWorker::work_imp()
 void GNBULWorker::handle_pusch(srsran_slot_cfg_t& slot_cfg)
 {
   /* Apply the CFO to correct the OFDM symbols */
-  srsran_vec_apply_cfo(gnb_ul.sf_symbols[0], config.uplink_cfo, gnb_ul.sf_symbols[0], nof_re);
+  srsran_vec_apply_cfo(gnb_ul.sf_symbols[0], config.uplink_cfo_correction, gnb_ul.sf_symbols[0], nof_re);
   /* Initialize the buffer for output */
   srsran::unique_byte_buffer_t data = srsran::make_byte_buffer();
   if (data == nullptr) {

@@ -1,4 +1,5 @@
 #include "shadower/hdr/syncer.h"
+#include "shadower/hdr/utils.h"
 
 Syncer::Syncer(syncer_args_t args_, Source* source_, ShadowerConfig& config_) :
   source(source_),
@@ -345,7 +346,7 @@ void Syncer::run_thread()
     task->ts                   = timestamp_new;
     task->task_idx             = task_idx++;
     publish_subframe(task);
-    if (!source->is_sdr()) {
+    if (!source->is_sdr() && config.enable_recorder) {
       char filename[64];
       sprintf(filename, "sf_%u_%u", task->task_idx, task->slot_idx);
       write_record_to_file(samples->data(), sf_len, filename);

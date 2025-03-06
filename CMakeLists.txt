@@ -73,6 +73,7 @@ option(ENABLE_RF_PLUGINS     "Enable RF plugins"                        ON)
 option(ENABLE_UHD            "Enable UHD"                               ON)
 option(ENABLE_BLADERF        "Enable BladeRF"                           ON)
 option(ENABLE_SOAPYSDR       "Enable SoapySDR"                          ON)
+option(ENABLE_LIMESUITENG    "Enable LimeSuiteNG"                       ON)
 option(ENABLE_SKIQ           "Enable Sidekiq SDK"                       ON)
 option(ENABLE_ZEROMQ         "Enable ZeroMQ"                            ON)
 option(ENABLE_HARDSIM        "Enable support for SIM cards"             ON)
@@ -242,6 +243,15 @@ if(ENABLE_SOAPYSDR)
     link_directories(${SOAPYSDR_LIBRARY_DIRS})
   endif(SOAPYSDR_FOUND)
 endif(ENABLE_SOAPYSDR)
+
+# LimeSDR
+if(ENABLE_LIMESUITENG)
+  find_package(limesuiteng REQUIRED)
+  if(limesuiteng_FOUND)
+    include_directories(${limesuiteng_INCLUDE_DIRS})
+    link_directories(${LIMESUITENG_LIBRARY_DIRS})
+  endif(limesuiteng_FOUND)
+endif(ENABLE_LIMESUITENG)
 
 # ZeroMQ
 if(ENABLE_ZEROMQ)

@@ -1,6 +1,7 @@
 #include "shadower/hdr/utils.h"
 #include "shadower/hdr/constants.h"
 #include "shadower/hdr/exploit.h"
+#include "shadower/hdr/source.h"
 #include "srsran/adt/circular_map.h"
 #include "srsran/asn1/rrc_nr_utils.h"
 #include "srsran/common/pcap.h"
@@ -15,12 +16,7 @@ srslog::basic_logger& srslog_init(ShadowerConfig* config)
 {
   srslog::init();
   srslog::sink* sink = nullptr;
-  if (config != nullptr && !config->log_file.empty()) {
-    sink = srslog::create_file_sink(config->log_file, 1024 * 1024 * 10);
-
-  } else {
-    sink = srslog::create_stdout_sink();
-  }
+  sink = srslog::create_stdout_sink();
   srslog::log_channel* chan = srslog::create_log_channel("main", *sink);
   srslog::set_default_sink(*sink);
   return srslog::fetch_basic_logger("main", false);
@@ -78,6 +74,26 @@ create_exploit_t load_exploit(std::string& filename)
   return create_exploit;
 }
 
+/* Function used to load exploit module */
+create_source_t load_source(const std::string filename)
+{
+  /* Open the shared library */
+  void* handle = dlopen(filename.c_str(), RTLD_LAZY);
+  if (!handle) {
+    std::cerr << "Error loading module: " + filename + " - " + dlerror() << std::endl;
+    return nullptr;
+  }
+
+  /* Load the create_exploit function from the shared library */
+  auto create_source = reinterpret_cast<create_source_t>(dlsym(handle, "create_source"));
+  if (!create_source) {
+    std::cerr << "Error loading symbol 'create_source' from " + filename + ": " + dlerror() << std::endl;
+    dlclose(handle);
+    return nullptr;
+  }
+  return create_source;
+}
+
 /* Read binary form configuration dumped structure */
 bool read_raw_config(const std::string& filename, uint8_t* buffer, size_t size)
 {
@@ -103,7 +119,7 @@ std::string vec_to_hex_str(uint8_t* buffer, size_t size)
 void set_thread_priority(std::thread& t, int priority)
 {
   pthread_t          native_handle = t.native_handle();
-  struct sched_param param {};
+  struct sched_param param{};
   param.sched_priority = priority;
   if (pthread_setschedparam(native_handle, SCHED_FIFO, &param) != 0) {
     std::cerr << "Failed to set thread priority" << std::endl;
