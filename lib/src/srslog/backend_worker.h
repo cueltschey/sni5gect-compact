@@ -22,8 +22,8 @@
 #ifndef SRSLOG_BACKEND_WORKER_H
 #define SRSLOG_BACKEND_WORKER_H
 
-#include "srsran/srslog/detail/log_entry.h"
 #include "shadower/hdr/trace_samples.h"
+#include "srsran/srslog/detail/log_entry.h"
 #include "srsran/srslog/detail/support/dyn_arg_store_pool.h"
 #include "srsran/srslog/detail/support/work_queue.h"
 #include "srsran/srslog/shared_types.h"
@@ -39,9 +39,10 @@ class backend_worker
 public:
   backend_worker(detail::work_queue<detail::log_entry>& queue, detail::dyn_arg_store_pool& arg_pool) :
     queue(queue), arg_pool(arg_pool), running_flag(false)
-  {}
+  {
+  }
 
-  backend_worker(const backend_worker&) = delete;
+  backend_worker(const backend_worker&)            = delete;
   backend_worker& operator=(const backend_worker&) = delete;
 
   ~backend_worker() { stop(); }
@@ -115,11 +116,11 @@ private:
   detail::work_queue<detail::log_entry>& queue;
   detail::dyn_arg_store_pool&            arg_pool;
   detail::shared_variable<bool>          running_flag;
-  error_handler      err_handler = [](const std::string& error) { fmt::print(stderr, "srsLog error - {}\n", error); };
-  std::once_flag     start_once_flag;
-  std::thread        worker_thread;
-  fmt::memory_buffer fmt_buffer;
-  TraceSamples       trace_logs;
+  error_handler       err_handler = [](const std::string& error) { fmt::print(stderr, "srsLog error - {}\n", error); };
+  std::once_flag      start_once_flag;
+  std::thread         worker_thread;
+  fmt::memory_buffer  fmt_buffer;
+  static TraceSamples trace_logs;
 };
 
 } // namespace srslog

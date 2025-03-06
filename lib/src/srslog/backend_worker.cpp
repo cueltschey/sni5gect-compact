@@ -20,10 +20,13 @@
  */
 
 #include "backend_worker.h"
+#include "shadower/hdr/trace_samples.h"
 #include "srsran/srslog/sink.h"
 #include <iostream>
 
 using namespace srslog;
+
+TraceSamples backend_worker::trace_logs;
 
 void backend_worker::stop()
 {
@@ -73,7 +76,7 @@ void backend_worker::create_worker(backend_priority priority)
 {
   assert(!running_flag && "Only one worker thread should be created");
 
-  trace_logs.init("ipc:///tmp/sni5gect.logs");
+  backend_worker::trace_logs.init("ipc:///tmp/sni5gect.logs");
 
   std::thread t([this, priority]() {
     running_flag = true;
@@ -153,7 +156,7 @@ void backend_worker::process_log_entry(detail::log_entry&& entry)
     err_handler(err_str.get_error());
   }
 
-  trace_logs.send_string(fmt::to_string(fmt_buffer));
+  backend_worker::trace_logs.send_string(fmt::to_string(fmt_buffer));
 }
 
 void backend_worker::process_outstanding_entries()
