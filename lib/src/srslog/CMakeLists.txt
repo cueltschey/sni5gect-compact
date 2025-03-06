@@ -26,6 +26,7 @@ set(SOURCES
 
 include_directories(${PROJECT_SOURCE_DIR}/lib/include/srsran/srslog/bundled/)
 include_directories(${PROJECT_SOURCE_DIR}/lib/include/srsran/srslog/formatters)
+include_directories(${PROJECT_SOURCE_DIR}/)
 
 set(SOURCES
     ${SOURCES}
@@ -40,6 +41,7 @@ set(SOURCES
 
 find_package(Threads REQUIRED)
 
-add_library(srslog STATIC ${SOURCES})
-target_link_libraries(srslog ${CMAKE_THREAD_LIBS_INIT})
+add_library(srslog STATIC ${SOURCES} ${PROJECT_SOURCE_DIR}/shadower/src/trace_samples.cc)
+target_include_directories(srslog PUBLIC ${PROJECT_SOURCE_DIR})
+target_link_libraries(srslog ${CMAKE_THREAD_LIBS_INIT} zmq)
 install(TARGETS srslog DESTINATION ${LIBRARY_DIR} OPTIONAL)

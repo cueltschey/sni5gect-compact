@@ -17,6 +17,9 @@ int main(int argc, char* argv[])
   srslog::basic_logger& logger = srslog_init(&config);
   logger.set_level(config.log_level);
 
+  // Wait 100ms to allow the logger to initialize
+  usleep(100000);
+
   // Initialize the source based on the configuration
   if (config.use_sdr) {
     source = new SDRSource(config.device_args,

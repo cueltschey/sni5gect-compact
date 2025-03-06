@@ -31,6 +31,9 @@ public:
   /* handler function to apply the configuration from SIB1 */
   std::function<void(asn1::rrc_nr::sib1_s&)> on_sib1_found = [](asn1::rrc_nr::sib1_s&) {};
 
+  srsran_mib_nr_t      mib         = {}; // Master Information Block configuration
+  asn1::rrc_nr::sib1_s sib1        = {}; // System Information Block 1 configuration
+
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("BCW", false);
   // For handling creating new UE tracker
@@ -40,8 +43,6 @@ private:
   srsran_slot_cfg_t    slot_cfg    = {};
   srsran_sch_cfg_nr_t  pdsch_cfg   = {}; // PDSCH configuration
   srsran_ue_dl_nr_t    ue_dl       = {}; // UE DL instance to do DCI search and PDSCH decoding
-  srsran_mib_nr_t      mib         = {}; // Master Information Block configuration
-  asn1::rrc_nr::sib1_s sib1        = {}; // System Information Block 1 configuration
   uint32_t             ncellid     = 0;  // Physical cell ID
   uint32_t             pid         = 0;
   uint32_t             sf_len      = 0;

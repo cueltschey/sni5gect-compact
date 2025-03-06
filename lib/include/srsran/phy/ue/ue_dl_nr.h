@@ -84,9 +84,11 @@ typedef struct SRSRAN_API {
   /// Temporally stores Found DCI messages from all SS
   srsran_dci_msg_nr_t dl_dci_msg[SRSRAN_MAX_DCI_MSG_NR];
   uint32_t            dl_dci_msg_count;
+  uint32_t            num_dl_dci;
 
   srsran_dci_msg_nr_t ul_dci_msg[SRSRAN_MAX_DCI_MSG_NR];
   uint32_t            ul_dci_count;
+  uint32_t            num_ul_dci;
 } srsran_ue_dl_nr_t;
 
 SRSRAN_API int
