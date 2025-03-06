@@ -1,12 +1,7 @@
 set(TestCommonSources ${SHADOWER_DIR}/utils.cc ${SHADOWER_DIR}/trace_samples.cc)
 
-<<<<<<< HEAD
 add_executable(source_test source_test.cc ${TestCommonSources})
 target_link_libraries(source_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
-=======
-add_executable(source_test source_test.cc ${SHADOWER_DIR}/source.cc ${SHADOWER_DIR}/ring_buffer.cc ${TestCommonSources})
-target_link_libraries(source_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} limesuiteng::limesuiteng)
->>>>>>> 759eb0603716e5d1d2f1c178212be0eb1820415b
 
 add_executable(cell_search_test cell_search_test.cc ${TestCommonSources})
 target_link_libraries(cell_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
@@ -14,14 +9,7 @@ target_link_libraries(cell_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_
 add_executable(search_ssb_freq_test search_ssb_freq_test.cc ${TestCommonSources})
 target_link_libraries(search_ssb_freq_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(syncer_test syncer_test.cc ${TestCommonSources}
-<<<<<<< HEAD
-=======
-    ${SHADOWER_DIR}/source.cc
-    ${SHADOWER_DIR}/ring_buffer.cc
->>>>>>> 759eb0603716e5d1d2f1c178212be0eb1820415b
-    ${SHADOWER_DIR}/syncer.cc
-)
+add_executable(syncer_test syncer_test.cc ${TestCommonSources} ${SHADOWER_DIR}/syncer.cc)
 target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} limesuiteng::limesuiteng zmq)
 
 add_executable(sib_search_test sib_search_test.cc ${TestCommonSources})
