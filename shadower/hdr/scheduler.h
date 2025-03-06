@@ -17,7 +17,6 @@ class Scheduler : public srsran::thread
 public:
   Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, create_exploit_t create_exploit_);
   ~Scheduler() override = default;
-  static TraceSamples tracer_status;
 
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("Scheduler", false);
@@ -51,6 +50,8 @@ private:
 
   /* handler to apply sib1 configuration to multiple workers */
   void handle_sib1(asn1::rrc_nr::sib1_s& sib1);
+
+  void on_ue_deactivate();
 
   /* list of UE trackers */
   std::vector<std::shared_ptr<UETracker> > ue_trackers = {};

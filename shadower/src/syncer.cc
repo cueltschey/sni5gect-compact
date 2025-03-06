@@ -46,7 +46,7 @@ bool Syncer::init()
   tracer_sib1.set_throttle_ms(500);
 
   tracer_status.init("ipc:///tmp/sni5gect");
-  tracer_status.set_throttle_ms(500);
+  tracer_status.set_throttle_ms(200);
 
   running.store(true);
   return true;

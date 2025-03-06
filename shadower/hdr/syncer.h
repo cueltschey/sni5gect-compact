@@ -39,17 +39,17 @@ public:
   /* retrieve tti and timestamp */
   void get_tti(uint32_t* idx, srsran_timestamp_t* ts);
 
-  uint32_t ncellid = 0;
+  uint32_t     ncellid = 0;
+  TraceSamples tracer_status;
 
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("syncer", true);
 
-  double   srate;
-  uint32_t sf_len;
-  uint32_t slot_per_sf;
-  Source*  source = nullptr;
+  double       srate;
+  uint32_t     sf_len;
+  uint32_t     slot_per_sf;
+  Source*      source = nullptr;
   TraceSamples tracer_sib1;
-  TraceSamples tracer_status;
 
   float    cfo_hz          = 0;
   uint32_t task_idx        = 0;

@@ -66,6 +66,8 @@ public:
   /* Update the last received message timestamp */
   void update_last_rx_timestamp();
 
+  std::function<void()> on_deactivate = []() {};
+
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("UETracker");
   /* UE name */

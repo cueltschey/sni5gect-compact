@@ -2,7 +2,6 @@
 #include "shadower/hdr/scheduler.h"
 #include "srsran/asn1/rrc_nr_utils.h"
 
-
 UETracker::UETracker(Source*           source_,
                      Syncer*           syncer_,
                      WDWorker*         wd_worker_,
@@ -81,7 +80,7 @@ void UETracker::deactivate()
   pcap_writer->close();
   logger.info("Deactivated UETracker %s", name.c_str());
   logger.info("Capture saved to: %s", config.pcap_folder + name + ".pcap");
-  Scheduler::tracer_status.send_string("{\"UE\": false }", true);
+  on_deactivate();
 }
 
 bool UETracker::init()
