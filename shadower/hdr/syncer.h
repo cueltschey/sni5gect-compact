@@ -4,6 +4,7 @@
 #include "shadower/hdr/safe_queue.h"
 #include "shadower/hdr/source.h"
 #include "shadower/hdr/task.h"
+#include "shadower/hdr/trace_samples.h"
 #include "srsran/common/threads.h"
 #include "srsran/srslog/srslog.h"
 #include <atomic>
@@ -47,6 +48,8 @@ private:
   uint32_t sf_len;
   uint32_t slot_per_sf;
   Source*  source = nullptr;
+  TraceSamples tracer_sib1;
+  TraceSamples tracer_status;
 
   float    cfo_hz          = 0;
   uint32_t task_idx        = 0;
