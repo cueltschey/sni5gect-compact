@@ -38,6 +38,8 @@ public:
   /* retrieve tti and timestamp */
   void get_tti(uint32_t* idx, srsran_timestamp_t* ts);
 
+  uint32_t ncellid = 0;
+
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("syncer", true);
 
@@ -47,7 +49,6 @@ private:
   Source*  source = nullptr;
 
   float    cfo_hz          = 0;
-  uint32_t ncellid         = 0;
   uint32_t task_idx        = 0;
   int32_t  samples_delayed = 0; /* Indicate if how many samples remaining in current slot */
 

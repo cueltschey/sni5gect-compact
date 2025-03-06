@@ -31,8 +31,8 @@ public:
   /* handler function to apply the configuration from SIB1 */
   std::function<void(asn1::rrc_nr::sib1_s&)> on_sib1_found = [](asn1::rrc_nr::sib1_s&) {};
 
-  srsran_mib_nr_t      mib         = {}; // Master Information Block configuration
-  asn1::rrc_nr::sib1_s sib1        = {}; // System Information Block 1 configuration
+  srsran_mib_nr_t      mib  = {}; // Master Information Block configuration
+  asn1::rrc_nr::sib1_s sib1 = {}; // System Information Block 1 configuration
 
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("BCW", false);

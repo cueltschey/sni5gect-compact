@@ -2,7 +2,9 @@
 #define GNB_UL_WORKER
 #include "shadower/hdr/arg_parser.h"
 #include "shadower/hdr/exploit.h"
+#include "shadower/hdr/source.h"
 #include "shadower/hdr/task.h"
+#include "shadower/hdr/trace_samples.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/common/mac_pcap.h"
 #include "srsran/common/phy_cfg_nr.h"
@@ -43,6 +45,7 @@ private:
   srsue::nr::state&                 phy_state;
   std::shared_ptr<srsran::mac_pcap> pcap_writer;
   srsran::phy_cfg_nr_t              phy_cfg = {};
+  static TraceSamples               tracer_ul_pusch;
 
   double             srate          = 0;
   uint32_t           sf_len         = 0;

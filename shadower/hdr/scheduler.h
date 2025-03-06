@@ -6,6 +6,7 @@
 #include "shadower/hdr/source.h"
 #include "shadower/hdr/syncer.h"
 #include "shadower/hdr/thread_pool.h"
+#include "shadower/hdr/trace_samples.h"
 #include "shadower/hdr/ue_tracker.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/common/threads.h"
@@ -16,6 +17,7 @@ class Scheduler : public srsran::thread
 public:
   Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, create_exploit_t create_exploit_);
   ~Scheduler() override = default;
+  static TraceSamples tracer_status;
 
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("Scheduler", false);

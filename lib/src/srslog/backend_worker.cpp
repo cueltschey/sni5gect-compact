@@ -25,8 +25,6 @@
 
 using namespace srslog;
 
-TraceSamples backend_worker::trace_logs;
-
 void backend_worker::stop()
 {
   // Signal the worker thread to stop.
@@ -75,7 +73,7 @@ void backend_worker::create_worker(backend_priority priority)
 {
   assert(!running_flag && "Only one worker thread should be created");
 
-  backend_worker::trace_logs.init("ipc:///tmp/sni5gect.logs");
+  trace_logs.init("ipc:///tmp/sni5gect.logs");
 
   std::thread t([this, priority]() {
     running_flag = true;

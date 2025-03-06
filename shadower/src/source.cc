@@ -125,8 +125,8 @@ LimeSDRSource::LimeSDRSource(std::string device_args,
   set_srate(srate);
   set_rx_gain(rx_gain);
   set_tx_gain(tx_gain);
-  set_rx_freq(rx_freq+21.5e3); // TODO: Apply hardware CFO correction after 1st SIB search if needed (>1000 Hz)
-  set_tx_freq(tx_freq+21.5e3);
+  set_rx_freq(rx_freq + 21.5e3); // TODO: Apply hardware CFO correction after 1st SIB search if needed (>1000 Hz)
+  set_tx_freq(tx_freq + 21.5e3);
   // set_rx_freq(rx_freq);
   // set_tx_freq(tx_freq);
 }
@@ -213,7 +213,7 @@ int LimeSDRSource::send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_t
   meta.flushPartialPacket = true;
 
   if (true) {
-    meta.timestamp          = srsran_timestamp_uint64(&tx_time, state.rf_ports[0].sample_rate);
+    meta.timestamp = srsran_timestamp_uint64(&tx_time, state.rf_ports[0].sample_rate);
     if (tx_time.full_secs < 0)
       return SRSRAN_ERROR;
     if (isnan(tx_time.frac_secs))
@@ -224,7 +224,8 @@ int LimeSDRSource::send(cf_t* samples, uint32_t length, srsran_timestamp_t& tx_t
   for (size_t ch = 0; ch < lime->txChannels.size(); ++ch)
     src[ch] = (lime::complex32f_t*)samples;
 
-  int samplesSent = LimePlugin_Write_complex32f(lime, reinterpret_cast<const lime::complex32f_t* const*>(src), length, 0, meta);
+  int samplesSent =
+      LimePlugin_Write_complex32f(lime, reinterpret_cast<const lime::complex32f_t* const*>(src), length, 0, meta);
 
   if (samplesSent < 0)
     return SRSRAN_ERROR;

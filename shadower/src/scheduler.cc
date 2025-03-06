@@ -1,5 +1,7 @@
 #include "shadower/hdr/scheduler.h"
 
+TraceSamples Scheduler::tracer_status;
+
 Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, create_exploit_t create_exploit_) :
   config(config_), source(source_), syncer(syncer_), create_exploit(create_exploit_), srsran::thread("Scheduler")
 {
@@ -26,6 +28,9 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
   thread_pool = new ThreadPool(config.pool_size);
   /* Initialize a list of UE trackers before start */
   pre_initialize_ue();
+
+  Scheduler::tracer_status.init("ipc:///tmp/sni5gect");
+  Scheduler::tracer_status.set_throttle_ms(200);
 }
 
 /* Initialize a list of UE trackers before start */
@@ -76,6 +81,7 @@ void Scheduler::handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& gr
   }
   selected_ue->activate(rnti, srsran_rnti_type_c);
   selected_ue->set_ue_rar_grant(grant, current_slot);
+  Scheduler::tracer_status.send_string(fmt::format("{{\"UE\": {:d} }}", rnti), true);
 }
 
 /* handler to apply MIB configuration to multiple workers */
@@ -100,6 +106,27 @@ void Scheduler::handle_sib1(asn1::rrc_nr::sib1_s& sib1)
     }
     logger.info(CYAN "SIB1 applied to all workers" RESET);
   });
+
+  // Update cell status
+  asn1::rrc_nr::plmn_id_info_s& plmn = sib1.cell_access_related_info.plmn_id_list[0];
+  asn1::rrc_nr::mcc_l&          mcc  = plmn.plmn_id_list[0].mcc;
+  asn1::rrc_nr::mnc_l&          mnc  = plmn.plmn_id_list[0].mnc;
+
+    std::string mnc_str;
+  if (mnc.size() == 2)
+    mnc_str = fmt::format("{}{}", mnc[0], mnc[1]);
+  else
+    mnc_str = fmt::format("{}{}{}", mnc[0], mnc[1], mnc[2]);
+
+  Scheduler::tracer_status.send_string(
+      fmt::format("{{\"CELL\": {}, \"TAC\": {}, \"MCC\": \"{}{}{}\", \"MNC\": \"{}\" }}",
+                  syncer->ncellid,
+                  plmn.tac.to_number(),
+                  mcc[0],
+                  mcc[1],
+                  mcc[2],
+                  mnc_str),
+      true);
 }
 
 void Scheduler::run_thread()

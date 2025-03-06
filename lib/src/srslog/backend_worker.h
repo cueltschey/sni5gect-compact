@@ -119,7 +119,7 @@ private:
   std::once_flag     start_once_flag;
   std::thread        worker_thread;
   fmt::memory_buffer fmt_buffer;
-  static TraceSamples       trace_logs;
+  TraceSamples       trace_logs;
 };
 
 } // namespace srslog

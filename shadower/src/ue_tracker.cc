@@ -1,5 +1,8 @@
 #include "shadower/hdr/ue_tracker.h"
+#include "shadower/hdr/scheduler.h"
 #include "srsran/asn1/rrc_nr_utils.h"
+
+
 UETracker::UETracker(Source*           source_,
                      Syncer*           syncer_,
                      WDWorker*         wd_worker_,
@@ -58,7 +61,7 @@ void UETracker::activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_)
     w->set_rnti(rnti, rnti_type);
   }
   /* Initialize the pcap writer */
-  if (!pcap_writer->open(config.pcap_folder + name + ".pcap")) {
+  if (pcap_writer->open(config.pcap_folder + name + ".pcap")) {
     logger.error("Failed to open pcap file");
   }
   /* Update last received message timestamp */
@@ -76,7 +79,9 @@ void UETracker::deactivate()
   /* If the gnb dl thread is still active, then stop the thread */
   thread_cancel();
   pcap_writer->close();
-  logger.info("deactivate UETracker %s", name.c_str());
+  logger.info("Deactivated UETracker %s", name.c_str());
+  logger.info("Capture saved to: %s", config.pcap_folder + name + ".pcap");
+  Scheduler::tracer_status.send_string("{\"UE\": false }", true);
 }
 
 bool UETracker::init()
