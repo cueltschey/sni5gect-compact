@@ -25,7 +25,7 @@ enum direction_t { UL, DL };
 #define MAGENTA "\033[35m" // Magenta
 #define CYAN "\033[36m"    // Cyan
 
-const std::string file_source_module_path = "build/shadower/libfile_source.so";
-const std::string uhd_source_module_path  = "build/shadower/libuhd_source.so";
-const std::string lime_source_module_path = "build/shadower/liblimesdr_source.so";
+const std::string file_source_module_path    = "build/shadower/libfile_source.so";
+const std::string uhd_source_module_path     = "build/shadower/libuhd_source.so";
+const std::string limesdr_source_module_path = "build/shadower/liblimesdr_source.so";
 #endif // CONSTANTS_H

@@ -31,6 +31,10 @@ int main(int argc, char* argv[])
     std::string     module_path        = config.source_module.empty() ? config.source_module : uhd_source_module_path;
     create_source_t uhd_source_creator = load_source(module_path);
     source                             = uhd_source_creator(config);
+  } else if (config.source_type == "limesdr") {
+    std::string     module_path = config.source_module.empty() ? config.source_module : limesdr_source_module_path;
+    create_source_t limesdr_source_creator = load_source(module_path);
+    source                                 = limesdr_source_creator(config);
   } else {
     logger.error("Invalid source type: %s", config.source_type.c_str());
     return -1;

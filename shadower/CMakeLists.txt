@@ -115,7 +115,7 @@ endif(ENABLE_UHD)
 # Lime SDR source
 if (ENABLE_LIMESUITENG)
   add_library(limesdr_source SHARED src/limesdr_source.cc src/utils.cc)
-  target_link_libraries(limesdr_source limesuiteng::limesuiteng)
+  target_link_libraries(limesdr_source limesuiteng::limesuiteng srslog)
 endif(ENABLE_LIMESUITENG)
 
 add_executable(recorder tools/recorder.cc)
