@@ -1,4 +1,5 @@
 #include "shadower/hdr/syncer.h"
+#include "shadower/hdr/utils.h"
 
 Syncer::Syncer(syncer_args_t args_, Source* source_, ShadowerConfig& config_) :
   source(source_),
@@ -41,6 +42,13 @@ bool Syncer::init()
   if (config.enable_recorder) {
     recorder = std::thread(&Syncer::record_to_file, this);
   }
+
+  tracer_sib1.init("ipc:///tmp/sni5gect.dl-sib1");
+  tracer_sib1.set_throttle_ms(500);
+
+  tracer_status.init("ipc:///tmp/sni5gect");
+  tracer_status.set_throttle_ms(200);
+
   running.store(true);
   return true;
 }
@@ -181,6 +189,8 @@ bool Syncer::run_cell_search()
     srsran_pbch_msg_nr_mib_info(&mib, mib_info_str.data(), (uint32_t)mib_info_str.size());
     logger.info(YELLOW "Found cell: %s" RESET, mib_info_str.data());
     ncellid = cs_result.N_id;
+
+    tracer_sib1.send(samples->data(), sf_len, true);
     cell_found.store(true);
     return true;
   }
@@ -216,6 +226,8 @@ void Syncer::handle_measurements(srsran_csi_trs_measurements_t& feedback)
   samples_delayed = (uint32_t)round((double)feedback.delay_us * (srate * 1e-6));
   cfo_hz          = feedback.cfo_hz;
   measurements    = feedback;
+  tracer_status.send_string(fmt::format(
+      "{{\"CFO\": {:.2f}, \"SNR\": {:.2f}, \"RSRP\": {:.2f}}}", feedback.cfo_hz, feedback.snr_dB, feedback.rsrp_dB));
 }
 
 /* If the syncer get out of sync, run this function to get back to sync again */
@@ -266,6 +278,7 @@ bool Syncer::run_sync_track(cf_t* buffer)
     logger.debug("Error handle_pbch");
     return false;
   }
+  tracer_sib1.send(buffer, sf_len, true);
   handle_measurements(measurements_tmp);
   return true;
 }
@@ -345,7 +358,7 @@ void Syncer::run_thread()
     task->ts                   = timestamp_new;
     task->task_idx             = task_idx++;
     publish_subframe(task);
-    if (!source->is_sdr()) {
+    if (!source->is_sdr() && config.enable_recorder) {
       char filename[64];
       sprintf(filename, "sf_%u_%u", task->task_idx, task->slot_idx);
       write_record_to_file(samples->data(), sf_len, filename);

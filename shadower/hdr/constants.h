@@ -1,6 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 #include <cstdint>
+#include <string>
 #define SF_DURATION 1e-3
 #define NUM_SUBFRAME 10
 
@@ -26,4 +27,7 @@ enum direction_t { UL, DL };
 
 static const double Tc = 1.0 / (480000.0 * 4096.0); // TS 138.211 4.1
 
+const std::string file_source_module_path    = "build/shadower/libfile_source.so";
+const std::string uhd_source_module_path     = "build/shadower/libuhd_source.so";
+const std::string limesdr_source_module_path = "build/shadower/liblimesdr_source.so";
 #endif // CONSTANTS_H

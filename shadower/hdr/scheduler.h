@@ -6,6 +6,7 @@
 #include "shadower/hdr/source.h"
 #include "shadower/hdr/syncer.h"
 #include "shadower/hdr/thread_pool.h"
+#include "shadower/hdr/trace_samples.h"
 #include "shadower/hdr/ue_tracker.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/common/threads.h"
@@ -50,6 +51,8 @@ private:
 
   /* handler to apply sib1 configuration to multiple workers */
   void handle_sib1(asn1::rrc_nr::sib1_s& sib1);
+
+  void on_ue_deactivate();
 
   /* list of UE trackers */
   std::vector<std::shared_ptr<UETracker> > ue_trackers = {};

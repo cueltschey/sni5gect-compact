@@ -11,63 +11,72 @@
 namespace bpo = boost::program_options;
 
 struct ShadowerConfig {
-  uint16_t                    band;
-  uint32_t                    nof_prb;
-  srsran_subcarrier_spacing_t scs_common;
-  srsran_subcarrier_spacing_t scs_ssb;
-  uint16_t                    ra_rnti;
+  // Cell info
+  uint16_t                    band;       // band number
+  uint32_t                    nof_prb;    // Number of Physical Resource Blocks
+  srsran_subcarrier_spacing_t scs_common; // Subcarrier Spacing for common (kHz)
+  srsran_subcarrier_spacing_t scs_ssb;    // Subcarrier Spacing for SSB (kHz)
+  uint16_t                    ra_rnti;    // RA-RNTI
 
-  uint32_t freq_offset;
-  uint32_t tx_gain;
-  uint32_t rx_gain;
+  // RF info
+  uint32_t freq_offset; // Frequency offset (Hz)
+  uint32_t tx_gain;     // Transmit gain (dB)
+  uint32_t rx_gain;     // Receive gain (dB)
 
-  uint32_t dl_arfcn;
-  double   dl_freq;
+  uint32_t dl_arfcn; // Downlink ARFCN
+  double   dl_freq;  // Downlink frequency from ARFCN
 
-  uint32_t ul_arfcn;
-  double   ul_freq;
+  uint32_t ul_arfcn; // Uplink ARFCN
+  double   ul_freq;  // Uplink frequency from ARFCN
 
-  uint32_t ssb_arfcn;
-  double   ssb_freq;
+  uint32_t ssb_arfcn; // SSB ARFCN
+  double   ssb_freq;  // SSB frequency from ARFCN
 
-  double   sample_rate;
-  double   uplink_cfo;
-  uint32_t slots_to_delay;
-  int32_t  send_advance_samples;
-  uint32_t max_flooding_epoch;
-  float    tx_cfo_correction;
-  int32_t  ul_sample_offset;
-  uint32_t n_ue_dl_worker;
-  uint32_t n_ue_ul_worker;
-  uint32_t n_gnb_ul_worker;
-  uint32_t n_gnb_dl_worker;
-  uint32_t pdsch_mcs;
-  uint32_t pdsch_prbs;
-  uint32_t close_timeout;
-  bool     parse_messages;
+  double sample_rate; // Sample rate (Hz)
 
+  double  uplink_cfo_correction; // Uplink CFO correction for PUSCH decoding
+  int32_t ul_sample_offset;      // Number of samples in last slot
+
+  // Derived RF configurations
   srsran_ssb_pattern_t ssb_pattern;
   srsran_duplex_mode_t duplex_mode;
 
-  bool        enable_recorder = false;
-  std::string recorder_file;
+  // Injector configurations
+  uint32_t slots_to_delay;      // Number of slots to delay injecting the message
+  uint32_t max_flooding_epoch;  // Number of duplications to send in each inject
+  float    tx_cfo_correction;   // Uplink CFO correction (Hz)
+  int32_t send_advance_samples; // Number of samples to send in advance, so that on the receiver side, it arrives at the
+                                // begining of the slot
+  uint32_t n_ue_dl_worker;      // Number of UE downlink workers
+  uint32_t n_ue_ul_worker;      // Number of UE uplink workers
+  uint32_t n_gnb_ul_worker;     // Number of gNB uplink workers
+  uint32_t n_gnb_dl_worker;     // Number of gNB downlink workers
+  uint32_t pdsch_mcs;           // PDSCH MCS used for injection
+  uint32_t pdsch_prbs;          // PDSCH PRBs used for injection
+  uint32_t close_timeout;  // Close timeout, after how long haven't received a message should stop tracking the UE (ms)
+  bool     parse_messages; // Whether we should parse the messages or not
 
-  bool        use_sdr;
-  std::string device_args;
-  std::string record_file;
+  // Recorder configurations
+  bool        enable_recorder = false; // Enable recording the IQ samples to file
+  std::string recorder_file;           // Recorder file path
+
+  // Source configurations
+  std::string source_type;   // Source type: file, uhd, limeSDR
+  std::string source_params; // Source parameters, e.g., device args, record file
+  std::string source_module; // Source module file
 
   srslog::basic_levels log_level           = srslog::basic_levels::info;
   srslog::basic_levels bc_worker_log_level = srslog::basic_levels::info;
   srslog::basic_levels worker_log_level    = srslog::basic_levels::info;
   srslog::basic_levels syncer_log_level    = srslog::basic_levels::info;
-  std::string          log_file;
 
-  bool        write_to_pcap = false;
-  std::string pcap_folder;
-  size_t      pool_size = 12;
-  uint32_t    num_ues   = 10;
+  std::string pcap_folder; // Pcap folder
 
-  std::string exploit_module;
+  // Preinitialized worker pool
+  size_t   pool_size = 20; // Thread pool size
+  uint32_t num_ues   = 10; // Number of UETrackers to pre-initialize
+
+  std::string exploit_module; // Exploit module to load
 };
 
 inline int parse_args(ShadowerConfig& config, int argc, char* argv[])
@@ -94,7 +103,7 @@ inline int parse_args(ShadowerConfig& config, int argc, char* argv[])
       ("rf.dl_arfcn", bpo::value<uint32_t>(&config.dl_arfcn)->default_value(628300), "DL ARFCN")
       ("rf.ssb_arfcn", bpo::value<uint32_t>(&config.ssb_arfcn)->default_value(628320), "SSB ARFCN")
       ("rf.sample_rate", bpo::value<double>(&config.sample_rate)->default_value(23.04e6), "Sample rate")
-      ("rf.uplink_cfo", bpo::value<double>(&config.uplink_cfo)->default_value(0), "Uplink CFO to apply")
+      ("rf.uplink_cfo_correction", bpo::value<double>(&config.uplink_cfo_correction)->default_value(0), "Uplink CFO to apply")
       ("rf.ul_sample_offset", bpo::value<int32_t>(&config.ul_sample_offset)->default_value(0), "Uplink Number of samples in last slot")
       // task configuration section
       ("task.slots_to_delay", bpo::value<uint32_t>(&config.slots_to_delay)->default_value(2), "Number of slots to delay before sending out")
@@ -110,21 +119,19 @@ inline int parse_args(ShadowerConfig& config, int argc, char* argv[])
       ("task.close_timeout", bpo::value<uint32_t>(&config.close_timeout)->default_value(1000), "Number of milliseconds to delay before closing the connection")
       ("task.parse_messages", bpo::value<bool>(&config.parse_messages)->default_value(true), "Prevent parsing messages if the flag is false")
       // source config section
-      ("source.use_sdr", bpo::value<bool>(&config.use_sdr)->default_value(false), "Use SDR")
-      ("source.device_args", bpo::value<std::string>(&config.device_args)->default_value(""), "Device args for downlink")
-      ("source.record_file", bpo::value<std::string>(&config.record_file)->default_value(""), "Record file for downlink")
+      ("source.source_type", bpo::value<std::string>(&config.source_type)->default_value("file"), "Device args for downlink")
+      ("source.source_params", bpo::value<std::string>(&config.source_params)->default_value("/tmp/output.fc32"), "Record file for downlink")
+      ("source.source_module", bpo::value<std::string>(&config.source_module)->default_value(""), "Module file used for source")
       // Pcap settings
-      ("pcap.write_to_pcap", bpo::value<bool>(&config.write_to_pcap)->default_value(false), "Use SDR")
       ("pcap.pcap_folder", bpo::value<std::string>(&config.pcap_folder)->default_value("/tmp/"), "Log level")
       // Recorder settings
-      ("recorder.enable", bpo::value<bool>(&config.enable_recorder)->default_value(false), "Enable recorder")
-      ("recorder.filename", bpo::value<std::string>(&config.recorder_file)->default_value("output.fc32"), "output FC32 file path")
+      ("recorder.enable_recorder", bpo::value<bool>(&config.enable_recorder)->default_value(false), "Enable recorder")
+      ("recorder.recorder_file", bpo::value<std::string>(&config.recorder_file)->default_value("output.fc32"), "output FC32 file path")
       // log config section
       ("log.log_level", bpo::value<std::string>()->default_value("INFO"), "Log level")
       ("log.bc_worker_log_level", bpo::value<std::string>()->default_value("INFO"), "Broadcast Worker Log level")
       ("log.worker_log_level", bpo::value<std::string>()->default_value("INFO"), "Worker Log level")
       ("log.syncer_log_level", bpo::value<std::string>()->default_value("INFO"), "Syncer Log level")
-      ("log.log_file", bpo::value<std::string>(&config.log_file)->default_value(""), "Log level")
       // pool section
       ("worker.pool_size", bpo::value<size_t>(&config.pool_size)->default_value(20), "Pool size")
       ("worker.num_ues", bpo::value<uint32_t>(&config.num_ues)->default_value(10), "Number of UEs to pre-initialize")

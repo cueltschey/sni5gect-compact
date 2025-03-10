@@ -1,5 +1,7 @@
+#include "shadower/hdr/arg_parser.h"
 #include "shadower/hdr/exploit.h"
 #include "shadower/hdr/scheduler.h"
+#include "shadower/hdr/source.h"
 #include "shadower/hdr/syncer.h"
 #include "srsran/srslog/srslog.h"
 // Configuration for the overshadower
@@ -17,14 +19,25 @@ int main(int argc, char* argv[])
   srslog::basic_logger& logger = srslog_init(&config);
   logger.set_level(config.log_level);
 
+  // Wait 100ms to allow the logger to initialize
+  usleep(100000);
+
   // Initialize the source based on the configuration
-  if (config.use_sdr) {
-    source = new SDRSource(
-        config.device_args, config.sample_rate, config.dl_freq, config.ul_freq, config.rx_gain, config.tx_gain);
-    logger.info(YELLOW "Initialized source using SDR: %s" RESET, config.device_args.c_str());
+  if (config.source_type == "file") {
+    std::string     module_path         = config.source_module.empty() ? config.source_module : file_source_module_path;
+    create_source_t file_source_creator = load_source(module_path);
+    source                              = file_source_creator(config);
+  } else if (config.source_type == "uhd") {
+    std::string     module_path        = config.source_module.empty() ? config.source_module : uhd_source_module_path;
+    create_source_t uhd_source_creator = load_source(module_path);
+    source                             = uhd_source_creator(config);
+  } else if (config.source_type == "limesdr") {
+    std::string     module_path = config.source_module.empty() ? config.source_module : limesdr_source_module_path;
+    create_source_t limesdr_source_creator = load_source(module_path);
+    source                                 = limesdr_source_creator(config);
   } else {
-    source = new FileSource(config.record_file.c_str(), config.sample_rate);
-    logger.info(YELLOW "Initialized source using file: %s" RESET, config.record_file.c_str());
+    logger.error("Invalid source type: %s", config.source_type.c_str());
+    return -1;
   }
 
   // load exploit module

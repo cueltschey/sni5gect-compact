@@ -1,5 +1,6 @@
 #include "shadower/hdr/source.h"
 #include "shadower/hdr/syncer.h"
+#include "shadower/hdr/utils.h"
 #include "test_variables.h"
 SafeQueue<Task> task_queue = {};
 
@@ -38,8 +39,14 @@ int main()
       .duplex_mode = config.duplex_mode,
   };
   /* Initialize source */
-  Source* source = new FileSource("/root/records/example.fc32", config.sample_rate);
-  // Source* source = new SDRSource("type=b200,serial=31BAD9E", 23.04e6, 3427.5e6, 3421.92e6, 40, 80);
+  // config.source_params        = "/root/records/example.fc32";
+  // create_source_t file_source = load_source(file_source_module_path);
+  // Source*         source      = file_source(config);
+
+  create_source_t uhd_source = load_source(uhd_source_module_path);
+  config.source_params       = "type=b200";
+  Source* source             = uhd_source(config);
+
   /* Initialize syncer */
   Syncer* syncer = new Syncer(syncer_args, source, config);
   syncer->init();

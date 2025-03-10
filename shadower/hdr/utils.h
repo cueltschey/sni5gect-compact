@@ -31,6 +31,8 @@ std::string vec_to_hex_str(uint8_t* buffer, size_t size);
 /* Set the thread priority */
 void set_thread_priority(std::thread& t, int priority);
 
+bool enable_rt_scheduler(uint8_t use_full_time = 0);
+
 /* Add the required UDP header for wdissector */
 int add_fake_header(uint8_t*             buffer,
                     uint8_t*             data,

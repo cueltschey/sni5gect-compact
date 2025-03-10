@@ -66,11 +66,14 @@ int main(int argc, char* argv[])
       .pattern     = config.ssb_pattern,
       .duplex_mode = config.duplex_mode,
   };
-  Source* source;
+  create_source_t file_source = load_source(file_source_module_path);
+  Source*         source;
   if (argc > 1) {
-    source = new FileSource(argv[1], config.sample_rate);
+    config.source_params = argv[1];
+    source               = file_source(config);
   } else {
-    source = new FileSource(sample_file_path.c_str(), config.sample_rate);
+    config.source_params = sample_file_path;
+    source               = file_source(config);
   }
 
   /* Run syncer to align the subframes */
