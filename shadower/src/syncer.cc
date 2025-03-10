@@ -278,7 +278,7 @@ bool Syncer::run_sync_track(cf_t* buffer)
     logger.debug("Error handle_pbch");
     return false;
   }
-  tracer_sib1.send(buffer, sf_len, true);
+  tracer_sib1.send(buffer, sf_len);
   handle_measurements(measurements_tmp);
   return true;
 }
