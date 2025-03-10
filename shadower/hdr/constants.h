@@ -24,4 +24,6 @@ enum direction_t { UL, DL };
 #define MAGENTA "\033[35m" // Magenta
 #define CYAN "\033[36m"    // Cyan
 
+static const double Tc = 1.0 / (480000.0 * 4096.0); // TS 138.211 4.1
+
 #endif // CONSTANTS_H

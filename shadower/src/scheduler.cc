@@ -8,8 +8,12 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
   /* Initialize broadcast worker */
   broadcast_worker = new BroadCastWorker(config);
   /* Attach the handler to create new UE tracker when new RACH msg2 is found */
-  broadcast_worker->on_ue_found = std::bind(
-      &Scheduler::handle_new_ue_found, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  broadcast_worker->on_ue_found = std::bind(&Scheduler::handle_new_ue_found,
+                                            this,
+                                            std::placeholders::_1,
+                                            std::placeholders::_2,
+                                            std::placeholders::_3,
+                                            std::placeholders::_4);
   /* Attach the handler to apply the configuration from SIB1 */
   broadcast_worker->on_sib1_found = std::bind(&Scheduler::handle_sib1, this, std::placeholders::_1);
 
@@ -59,7 +63,10 @@ void Scheduler::push_new_task(std::shared_ptr<Task>& task)
 }
 
 /* handler to activate new UE tracker when new RACH msg2 is found */
-void Scheduler::handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& grant, uint32_t current_slot)
+void Scheduler::handle_new_ue_found(uint16_t                   rnti,
+                                    std::array<uint8_t, 27UL>& grant,
+                                    uint32_t                   current_slot,
+                                    uint32_t                   time_advance)
 {
   std::shared_ptr<UETracker> selected_ue = nullptr;
   /* select a UE tracker that is not activated */
@@ -74,7 +81,7 @@ void Scheduler::handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& gr
     logger.error(RED "No available UE tracker" RESET);
     return;
   }
-  selected_ue->activate(rnti, srsran_rnti_type_c);
+  selected_ue->activate(rnti, srsran_rnti_type_c, time_advance);
   selected_ue->set_ue_rar_grant(grant, current_slot);
 }
 

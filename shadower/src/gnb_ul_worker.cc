@@ -102,13 +102,13 @@ void GNBULWorker::work_imp()
     /* Update the last received message time */
     update_rx_timestamp();
     /* Copy the samples to the process buffer */
-    if (slot_in_sf == 0 && config.ul_sample_offset > 0) {
+    if (slot_in_sf == 0 && ta_samples > 0) {
       /* If it is the first slot, then part of the samples is in the last slot */
-      srsran_vec_cf_copy(buffer, task->last_slot->data() + sf_len - config.ul_sample_offset, config.ul_sample_offset);
-      srsran_vec_cf_copy(buffer + config.ul_sample_offset, task->buffer->data(), slot_len - config.ul_sample_offset);
+      srsran_vec_cf_copy(buffer, task->last_slot->data() + sf_len - ta_samples, ta_samples);
+      srsran_vec_cf_copy(buffer + ta_samples, task->buffer->data(), slot_len - ta_samples);
     } else {
       /* only copy half of the subframe to the buffer */
-      srsran_vec_cf_copy(buffer, task->buffer->data() + slot_in_sf * slot_len - config.ul_sample_offset, slot_len);
+      srsran_vec_cf_copy(buffer, task->buffer->data() + slot_in_sf * slot_len - ta_samples, slot_len);
     }
     /* estimate FFT will run on first slot */
     srsran_gnb_ul_fft(&gnb_ul);
