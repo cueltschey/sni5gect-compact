@@ -156,7 +156,7 @@ void backend_worker::process_log_entry(detail::log_entry&& entry)
     err_handler(err_str.get_error());
   }
 
-  backend_worker::trace_logs.send_string(fmt::to_string(fmt_buffer));
+  backend_worker::trace_logs.send_string(fmt::to_string(fmt_buffer), true);
 }
 
 void backend_worker::process_outstanding_entries()
