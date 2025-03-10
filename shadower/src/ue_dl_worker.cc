@@ -191,9 +191,6 @@ void UEDLWorker::handle_pdsch(srsran_slot_cfg_t& slot_cfg)
                      DL,
                      exploit);
   /* If rrc_setup is found, then return */
-  if (!pending_rrc_setup) {
-    return;
-  }
   if (!config.parse_messages) {
     return;
   }
@@ -219,6 +216,12 @@ void UEDLWorker::handle_pdsch(srsran_slot_cfg_t& slot_cfg)
       }
       case 0b00000001: {
         handle_dlsch(subpdu.get_sdu(), subpdu.get_sdu_length());
+        break;
+      }
+      case srsran::mac_sch_subpdu_nr::TA_CMD: {
+        srsran::mac_sch_subpdu_nr::ta_t ta = subpdu.get_ta();
+        logger.info("Timing Advance Command: %d", ta.ta_command);
+        update_timing_advance(ta.ta_command);
         break;
       }
       case srsran::mac_sch_subpdu_nr::nr_lcid_sch_t::CON_RES_ID: {

@@ -68,6 +68,9 @@ public:
 
   std::function<void()> on_deactivate = []() {};
 
+  /* Update timing advance */
+  void update_timing_advance(uint32_t ta_command);
+
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("UETracker");
   /* UE name */

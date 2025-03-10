@@ -58,6 +58,7 @@ void UETracker::activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_, uint32_t
   for (uint32_t i = 0; i < config.n_ue_dl_worker; i++) {
     UEDLWorker* w = ue_dl_workers[i];
     w->set_rnti(rnti, rnti_type);
+    w->update_timing_advance = std::bind(&UETracker::update_timing_advance, this, std::placeholders::_1);
   }
   /* Update the rnti for gnb ul */
   for (uint32_t i = 0; i < config.n_gnb_ul_worker; i++) {
@@ -87,6 +88,17 @@ void UETracker::deactivate()
   logger.info("Deactivated UETracker %s", name.c_str());
   logger.info("Capture saved to: %s", config.pcap_folder + name + ".pcap");
   on_deactivate();
+}
+
+void UETracker::update_timing_advance(uint32_t ta_command)
+{
+  uint32_t n_ta_old = n_timing_advance;
+  n_timing_advance  = n_ta_old + (ta_command - 31) * 16 * 64 / (1 << config.scs_common);
+  ta_time           = static_cast<double>(n_timing_advance) * Tc;
+  for (uint32_t i = 0; i < config.n_gnb_ul_worker; i++) {
+    GNBULWorker* w = gnb_ul_workers[i];
+    w->set_ta_samples(ta_time);
+  }
 }
 
 bool UETracker::init()
