@@ -52,7 +52,7 @@ void UETracker::activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_, uint32_t
   name      = "UE-" + std::to_string(rnti);
 
   n_timing_advance = time_advance * 16 * 64 / (1 << config.scs_common) + phy_cfg.t_offset;
-  ta_time          = n_timing_advance * Tc;
+  ta_time          = static_cast<double>(n_timing_advance) * Tc;
 
   /* Update the rnti for ue dl */
   for (uint32_t i = 0; i < config.n_ue_dl_worker; i++) {

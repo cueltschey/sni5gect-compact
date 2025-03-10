@@ -7,6 +7,7 @@ FileSource::FileSource(const char* file_name, double sample_rate) :
   if (!ifile.is_open()) {
     throw std::runtime_error("Error opening file");
   }
+  printf("[INFO] Using source file: %s\n", file_name);
   timestamp_prev = {0, 0};
 }
 

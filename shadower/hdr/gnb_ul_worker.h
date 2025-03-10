@@ -39,10 +39,10 @@ public:
   std::function<void()> update_rx_timestamp = []() {};
 
   /* Update the number of samples to send in advance */
-  void set_ta_samples(uint32_t ta_time)
+  void set_ta_samples(double ta_time)
   {
     ta_samples = ta_time * srate;
-    logger.info("Setting number of samples according to TA to %d", ta_samples);
+    logger.info("Setting Timing Advance samples for %u to %d", rnti, ta_samples);
   }
 
 private:
