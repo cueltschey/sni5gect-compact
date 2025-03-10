@@ -129,10 +129,11 @@ bool BroadCastWorker::decode_rar(srsran::unique_byte_buffer_t& data, uint32_t sl
     logger.error("Invalid TC-RNTI");
     return false;
   }
+  uint32_t time_advance = subpdu.get_ta();
 
   logger.info(CYAN "Found new UE with tc-rnti: %d slot: %u task: %u" RESET, tc_rnti, slot_idx, task_idx);
   std::array<uint8_t, srsran::mac_rar_subpdu_nr::UL_GRANT_NBITS> rar_grant = subpdu.get_ul_grant();
-  on_ue_found(tc_rnti, rar_grant, slot_idx);
+  on_ue_found(tc_rnti, rar_grant, slot_idx, time_advance);
   return true;
 }
 

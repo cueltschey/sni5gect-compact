@@ -43,7 +43,8 @@ private:
   void push_new_task(std::shared_ptr<Task>& task);
 
   /* handler to activate new UE tracker when new RACH msg2 is found */
-  void handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& grant, uint32_t current_slot);
+  void
+  handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& grant, uint32_t current_slot, uint32_t time_advance);
 
   /* handler to apply MIB configuration to multiple workers */
   void handle_mib(srsran_mib_nr_t& mib, uint32_t ncellid);

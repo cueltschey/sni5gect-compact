@@ -25,8 +25,8 @@ public:
   bool apply_config_from_sib1(asn1::rrc_nr::sib1_s& sib1_);
 
   /* handler function to create new UE tracker when new RACH msg2 is found */
-  std::function<void(uint16_t, std::array<uint8_t, 27UL>&, uint32_t)> on_ue_found =
-      [](uint16_t, std::array<uint8_t, 27UL>&, uint32_t) {};
+  std::function<void(uint16_t, std::array<uint8_t, 27UL>&, uint32_t, uint32_t)> on_ue_found =
+      [](uint16_t, std::array<uint8_t, 27UL>&, uint32_t, uint32_t) {};
 
   /* handler function to apply the configuration from SIB1 */
   std::function<void(asn1::rrc_nr::sib1_s&)> on_sib1_found = [](asn1::rrc_nr::sib1_s&) {};

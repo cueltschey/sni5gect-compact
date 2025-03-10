@@ -38,6 +38,13 @@ public:
   /* Update the last received message timestamp */
   std::function<void()> update_rx_timestamp = []() {};
 
+  /* Update the number of samples to send in advance */
+  void set_ta_samples(double ta_time)
+  {
+    ta_samples = ta_time * srate;
+    logger.info("Setting Timing Advance samples for %u to %d", rnti, ta_samples);
+  }
+
 private:
   srslog::basic_logger&             logger;
   std::mutex                        mutex;
@@ -58,6 +65,7 @@ private:
   uint32_t           pid            = 0;
   uint16_t           rnti           = SRSRAN_INVALID_RNTI;
   srsran_rnti_type_t rnti_type      = srsran_rnti_type_c;
+  uint32_t           ta_samples; // Number of samples in advance according to timing advance command
 
   cf_t*                  buffer        = nullptr;
   WDWorker*              wd_worker     = nullptr;

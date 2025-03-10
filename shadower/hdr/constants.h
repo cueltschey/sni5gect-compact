@@ -25,6 +25,8 @@ enum direction_t { UL, DL };
 #define MAGENTA "\033[35m" // Magenta
 #define CYAN "\033[36m"    // Cyan
 
+static const double Tc = 1.0 / (480000.0 * 4096.0); // TS 138.211 4.1
+
 const std::string file_source_module_path    = "build/shadower/libfile_source.so";
 const std::string uhd_source_module_path     = "build/shadower/libuhd_source.so";
 const std::string limesdr_source_module_path = "build/shadower/liblimesdr_source.so";

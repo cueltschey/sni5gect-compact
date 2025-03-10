@@ -10,7 +10,7 @@ add_executable(search_ssb_freq_test search_ssb_freq_test.cc ${TestCommonSources}
 target_link_libraries(search_ssb_freq_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(syncer_test syncer_test.cc ${TestCommonSources} ${SHADOWER_DIR}/syncer.cc)
-target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} limesuiteng::limesuiteng zmq)
+target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} zmq)
 
 add_executable(sib_search_test sib_search_test.cc ${TestCommonSources})
 target_link_libraries(sib_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
@@ -62,7 +62,7 @@ add_executable(sib_overshadow_test sib_overshadow_test.cc ${TestCommonSources}
     ${SHADOWER_DIR}/syncer.cc
     ${SHADOWER_DIR}/ring_buffer.cc
 )
-target_link_libraries(sib_overshadow_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} limesuiteng::limesuiteng zmq)
+target_link_libraries(sib_overshadow_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} zmq)
 
 add_executable(prach_detect_test prach_detect_test.cc ${TestCommonSources})
 target_link_libraries(prach_detect_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
