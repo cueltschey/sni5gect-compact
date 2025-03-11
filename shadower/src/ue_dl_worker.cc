@@ -5,6 +5,11 @@
 #include <iomanip>
 #include <sstream>
 #include <utility>
+
+// Tracer singleton
+TraceSamples UEDLWorker::tracer_dl_pdsch;
+TraceSamples UEDLWorker::tracer_dl_dci_ul;
+
 UEDLWorker::UEDLWorker(srslog::basic_logger&             logger_,
                        ShadowerConfig&                   config_,
                        srsue::nr::state&                 phy_state_,
@@ -61,6 +66,13 @@ bool UEDLWorker::init(srsran::phy_cfg_nr_t& phy_cfg_)
     logger.error("Couldn't allocate and/or initialize softbuffer");
     return false;
   }
+
+  UEDLWorker::tracer_dl_pdsch.init("ipc:///tmp/sni5gect.dl-pdsch");
+  UEDLWorker::tracer_dl_pdsch.set_throttle_ms(100);
+
+  UEDLWorker::tracer_dl_dci_ul.init("ipc:///tmp/sni5gect.dl-dci-ul");
+  UEDLWorker::tracer_dl_dci_ul.set_throttle_ms(100);
+
   return true;
 }
 
@@ -87,6 +99,8 @@ void UEDLWorker::set_rnti(uint16_t rnti_, srsran_rnti_type_t rnti_type_)
   std::lock_guard<std::mutex> lock(mutex);
   rnti      = rnti_;
   rnti_type = rnti_type_;
+  UEDLWorker::tracer_dl_dci_ul.reset_throttle();
+  UEDLWorker::tracer_dl_pdsch.reset_throttle();
 }
 
 /* Set the task for the ue_dl worker */
@@ -121,6 +135,13 @@ void UEDLWorker::work_imp()
     ue_dl_dci_search(ue_dl, phy_cfg, slot_cfg, rnti, rnti_type, phy_state, logger, task->task_idx);
     /* PDSCH decoding */
     handle_pdsch(slot_cfg);
+  }
+
+  if (ue_dl.num_dl_dci > 0) {
+    UEDLWorker::tracer_dl_pdsch.send(task->buffer->data(), sf_len);
+  }
+  if (ue_dl.num_ul_dci > 0) {
+    UEDLWorker::tracer_dl_dci_ul.send(task->buffer->data(), sf_len);
   }
 }
 
@@ -177,9 +198,6 @@ void UEDLWorker::handle_pdsch(srsran_slot_cfg_t& slot_cfg)
                      DL,
                      exploit);
   /* If rrc_setup is found, then return */
-  if (!pending_rrc_setup) {
-    return;
-  }
   if (!config.parse_messages) {
     return;
   }
@@ -205,6 +223,12 @@ void UEDLWorker::handle_pdsch(srsran_slot_cfg_t& slot_cfg)
       }
       case 0b00000001: {
         handle_dlsch(subpdu.get_sdu(), subpdu.get_sdu_length());
+        break;
+      }
+      case srsran::mac_sch_subpdu_nr::TA_CMD: {
+        srsran::mac_sch_subpdu_nr::ta_t ta = subpdu.get_ta();
+        logger.info("Timing Advance Command: %d", ta.ta_command);
+        update_timing_advance(ta.ta_command);
         break;
       }
       case srsran::mac_sch_subpdu_nr::nr_lcid_sch_t::CON_RES_ID: {

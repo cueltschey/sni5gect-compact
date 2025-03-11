@@ -79,6 +79,17 @@ bool BroadCastWorker::pdsch_decode(uint32_t slot_idx, uint32_t task_idx)
     logger.debug("Error PDSCH got wrong CRC");
     return false;
   }
+  bool all_zeros = true;
+  for (uint32_t a = 0; a < data->N_bytes; a++) {
+    if (data->msg[a] != 0) {
+      all_zeros = false;
+      break;
+    }
+  }
+  if (all_zeros) {
+    logger.info("Broadcast worker received a message with all zeros");
+    return false;
+  }
   if (pdsch_cfg.grant.rnti_type == srsran_rnti_type_ra) {
     return decode_rar(data, slot_idx, task_idx);
   } else {
@@ -129,10 +140,11 @@ bool BroadCastWorker::decode_rar(srsran::unique_byte_buffer_t& data, uint32_t sl
     logger.error("Invalid TC-RNTI");
     return false;
   }
+  uint32_t time_advance = subpdu.get_ta();
 
   logger.info(CYAN "Found new UE with tc-rnti: %d slot: %u task: %u" RESET, tc_rnti, slot_idx, task_idx);
   std::array<uint8_t, srsran::mac_rar_subpdu_nr::UL_GRANT_NBITS> rar_grant = subpdu.get_ul_grant();
-  on_ue_found(tc_rnti, rar_grant, slot_idx);
+  on_ue_found(tc_rnti, rar_grant, slot_idx, time_advance);
   return true;
 }
 

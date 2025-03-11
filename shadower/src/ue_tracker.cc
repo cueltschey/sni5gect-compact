@@ -1,5 +1,8 @@
 #include "shadower/hdr/ue_tracker.h"
+#include "shadower/hdr/constants.h"
+#include "shadower/hdr/scheduler.h"
 #include "srsran/asn1/rrc_nr_utils.h"
+
 UETracker::UETracker(Source*           source_,
                      Syncer*           syncer_,
                      WDWorker*         wd_worker_,
@@ -42,23 +45,29 @@ UETracker::~UETracker()
 }
 
 /* Activate the current UETracker */
-void UETracker::activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_)
+void UETracker::activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_, uint32_t time_advance)
 {
   rnti      = rnti_;
   rnti_type = rnti_type_;
   name      = "UE-" + std::to_string(rnti);
+
+  n_timing_advance = time_advance * 16 * 64 / (1 << config.scs_common) + phy_cfg.t_offset;
+  ta_time          = static_cast<double>(n_timing_advance) * Tc;
+
   /* Update the rnti for ue dl */
   for (uint32_t i = 0; i < config.n_ue_dl_worker; i++) {
     UEDLWorker* w = ue_dl_workers[i];
     w->set_rnti(rnti, rnti_type);
+    w->update_timing_advance = std::bind(&UETracker::update_timing_advance, this, std::placeholders::_1);
   }
   /* Update the rnti for gnb ul */
   for (uint32_t i = 0; i < config.n_gnb_ul_worker; i++) {
     GNBULWorker* w = gnb_ul_workers[i];
     w->set_rnti(rnti, rnti_type);
+    w->set_ta_samples(ta_time);
   }
   /* Initialize the pcap writer */
-  if (!pcap_writer->open(config.pcap_folder + name + ".pcap")) {
+  if (pcap_writer->open(config.pcap_folder + name + ".pcap")) {
     logger.error("Failed to open pcap file");
   }
   /* Update last received message timestamp */
@@ -76,7 +85,20 @@ void UETracker::deactivate()
   /* If the gnb dl thread is still active, then stop the thread */
   thread_cancel();
   pcap_writer->close();
-  logger.info("deactivate UETracker %s", name.c_str());
+  logger.info("Deactivated UETracker %s", name.c_str());
+  logger.info("Capture saved to: %s", config.pcap_folder + name + ".pcap");
+  on_deactivate();
+}
+
+void UETracker::update_timing_advance(uint32_t ta_command)
+{
+  uint32_t n_ta_old = n_timing_advance;
+  n_timing_advance  = n_ta_old + (ta_command - 31) * 16 * 64 / (1 << config.scs_common);
+  ta_time           = static_cast<double>(n_timing_advance) * Tc;
+  for (uint32_t i = 0; i < config.n_gnb_ul_worker; i++) {
+    GNBULWorker* w = gnb_ul_workers[i];
+    w->set_ta_samples(ta_time);
+  }
 }
 
 bool UETracker::init()
@@ -136,6 +158,26 @@ bool UETracker::init()
 bool UETracker::apply_config_from_sib1(asn1::rrc_nr::sib1_s& sib1)
 {
   update_phy_cfg_from_sib1(phy_cfg, sib1);
+  // By default set the t_offset to 25600
+  phy_cfg.t_offset = 25600;
+  if (sib1.serving_cell_cfg_common_present) {
+    if (sib1.serving_cell_cfg_common.n_timing_advance_offset_present) {
+      switch (sib1.serving_cell_cfg_common.n_timing_advance_offset.value) {
+        case asn1::rrc_nr::serving_cell_cfg_common_sib_s::n_timing_advance_offset_opts::n0:
+          phy_cfg.t_offset = 0;
+          break;
+        case asn1::rrc_nr::serving_cell_cfg_common_sib_s::n_timing_advance_offset_opts::n25600:
+          phy_cfg.t_offset = 25600;
+          break;
+        case asn1::rrc_nr::serving_cell_cfg_common_sib_s::n_timing_advance_offset_opts::n39936:
+          phy_cfg.t_offset = 39936;
+          break;
+        default:
+          logger.error("Invalid n_ta_offset option");
+          break;
+      }
+    }
+  }
   if (!update_cfg()) {
     return false;
   }

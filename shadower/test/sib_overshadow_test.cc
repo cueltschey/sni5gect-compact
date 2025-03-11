@@ -40,13 +40,17 @@ int main(int argc, char* argv[])
 
   /* Initialize the source based on the configuration */
   Source* source;
-  if (config.use_sdr) {
-    source = new SDRSource(
-        config.device_args, config.sample_rate, config.dl_freq, config.ul_freq, config.rx_gain, config.tx_gain);
-    logger.info("Initialized source using SDR: %s", config.device_args.c_str());
+  config.source_type = "uhd";
+  if (config.source_type == "uhd") {
+    create_source_t uhd_source = load_source(uhd_source_module_path);
+    config.source_params       = "type=b200";
+    source                     = uhd_source(config);
+    logger.info("Initialized source using SDR: %s", config.source_params.c_str());
   } else {
-    source = new FileSource(config.record_file.c_str(), config.sample_rate);
-    logger.info("Initialized source using file: %s", config.record_file.c_str());
+    create_source_t file_source = load_source(file_source_module_path);
+    config.source_params        = "/root/records/example.fc32";
+    source                      = file_source(config);
+    logger.info("Initialized source using file: %s", config.source_params.c_str());
   }
 
   /* GNB DL init with configuration from phy_cfg */

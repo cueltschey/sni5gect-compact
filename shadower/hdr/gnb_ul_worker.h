@@ -2,7 +2,9 @@
 #define GNB_UL_WORKER
 #include "shadower/hdr/arg_parser.h"
 #include "shadower/hdr/exploit.h"
+#include "shadower/hdr/source.h"
 #include "shadower/hdr/task.h"
+#include "shadower/hdr/trace_samples.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/common/mac_pcap.h"
 #include "srsran/common/phy_cfg_nr.h"
@@ -36,6 +38,13 @@ public:
   /* Update the last received message timestamp */
   std::function<void()> update_rx_timestamp = []() {};
 
+  /* Update the number of samples to send in advance */
+  void set_ta_samples(double ta_time)
+  {
+    ta_samples = ta_time * srate;
+    logger.info("Setting Timing Advance samples for %u to %d", rnti, ta_samples);
+  }
+
 private:
   srslog::basic_logger&             logger;
   std::mutex                        mutex;
@@ -43,6 +52,7 @@ private:
   srsue::nr::state&                 phy_state;
   std::shared_ptr<srsran::mac_pcap> pcap_writer;
   srsran::phy_cfg_nr_t              phy_cfg = {};
+  static TraceSamples               tracer_ul_pusch;
 
   double             srate          = 0;
   uint32_t           sf_len         = 0;
@@ -55,6 +65,7 @@ private:
   uint32_t           pid            = 0;
   uint16_t           rnti           = SRSRAN_INVALID_RNTI;
   srsran_rnti_type_t rnti_type      = srsran_rnti_type_c;
+  uint32_t           ta_samples; // Number of samples in advance according to timing advance command
 
   cf_t*                  buffer        = nullptr;
   WDWorker*              wd_worker     = nullptr;

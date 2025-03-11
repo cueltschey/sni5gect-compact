@@ -8,8 +8,12 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
   /* Initialize broadcast worker */
   broadcast_worker = new BroadCastWorker(config);
   /* Attach the handler to create new UE tracker when new RACH msg2 is found */
-  broadcast_worker->on_ue_found = std::bind(
-      &Scheduler::handle_new_ue_found, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  broadcast_worker->on_ue_found = std::bind(&Scheduler::handle_new_ue_found,
+                                            this,
+                                            std::placeholders::_1,
+                                            std::placeholders::_2,
+                                            std::placeholders::_3,
+                                            std::placeholders::_4);
   /* Attach the handler to apply the configuration from SIB1 */
   broadcast_worker->on_sib1_found = std::bind(&Scheduler::handle_sib1, this, std::placeholders::_1);
 
@@ -39,6 +43,7 @@ void Scheduler::pre_initialize_ue()
       logger.error("Failed to initialize UE tracker");
       continue;
     }
+    ue->on_deactivate = std::bind(&Scheduler::on_ue_deactivate, this);
     ue_trackers.push_back(ue);
   }
 }
@@ -59,7 +64,10 @@ void Scheduler::push_new_task(std::shared_ptr<Task>& task)
 }
 
 /* handler to activate new UE tracker when new RACH msg2 is found */
-void Scheduler::handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& grant, uint32_t current_slot)
+void Scheduler::handle_new_ue_found(uint16_t                   rnti,
+                                    std::array<uint8_t, 27UL>& grant,
+                                    uint32_t                   current_slot,
+                                    uint32_t                   time_advance)
 {
   std::shared_ptr<UETracker> selected_ue = nullptr;
   /* select a UE tracker that is not activated */
@@ -74,8 +82,14 @@ void Scheduler::handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& gr
     logger.error(RED "No available UE tracker" RESET);
     return;
   }
-  selected_ue->activate(rnti, srsran_rnti_type_c);
+  selected_ue->activate(rnti, srsran_rnti_type_c, time_advance);
   selected_ue->set_ue_rar_grant(grant, current_slot);
+  syncer->tracer_status.send_string(fmt::format("{{\"UE\": {:d} }}", rnti), true);
+}
+
+void Scheduler::on_ue_deactivate()
+{
+  syncer->tracer_status.send_string("{\"UE\": false }", true);
 }
 
 /* handler to apply MIB configuration to multiple workers */
@@ -100,6 +114,26 @@ void Scheduler::handle_sib1(asn1::rrc_nr::sib1_s& sib1)
     }
     logger.info(CYAN "SIB1 applied to all workers" RESET);
   });
+
+  // Update cell status
+  asn1::rrc_nr::plmn_id_info_s& plmn = sib1.cell_access_related_info.plmn_id_list[0];
+  asn1::rrc_nr::mcc_l&          mcc  = plmn.plmn_id_list[0].mcc;
+  asn1::rrc_nr::mnc_l&          mnc  = plmn.plmn_id_list[0].mnc;
+
+  std::string mnc_str;
+  if (mnc.size() == 2)
+    mnc_str = fmt::format("{}{}", mnc[0], mnc[1]);
+  else
+    mnc_str = fmt::format("{}{}{}", mnc[0], mnc[1], mnc[2]);
+
+  syncer->tracer_status.send_string(fmt::format("{{\"CELL\": {}, \"TAC\": {}, \"MCC\": \"{}{}{}\", \"MNC\": \"{}\" }}",
+                                                syncer->ncellid,
+                                                plmn.tac.to_number(),
+                                                mcc[0],
+                                                mcc[1],
+                                                mcc[2],
+                                                mnc_str),
+                                    true);
 }
 
 void Scheduler::run_thread()

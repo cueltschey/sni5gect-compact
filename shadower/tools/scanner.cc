@@ -102,7 +102,16 @@ int main(int argc, char* argv[])
   }
 
   /* Initialize source */
-  source = new SDRSource("type=b200", srate, center_frequency, center_frequency, 40, 80);
+  ShadowerConfig config = {};
+  config.source_params  = "type=b200";
+  config.sample_rate    = srate;
+  config.dl_freq        = center_frequency;
+  config.ul_freq        = center_frequency;
+  config.rx_gain        = 40;
+  config.tx_gain        = 80;
+
+  create_source_t uhd_source_creator = load_source(uhd_source_module_path);
+  source                             = uhd_source_creator(config);
 
   /* If sample rate config is provided */
   if (argc > 4) {

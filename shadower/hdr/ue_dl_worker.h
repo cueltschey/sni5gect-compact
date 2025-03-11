@@ -4,6 +4,7 @@
 #include "shadower/hdr/exploit.h"
 #include "shadower/hdr/fft_processor.h"
 #include "shadower/hdr/task.h"
+#include "shadower/hdr/trace_samples.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/asn1/rrc_nr.h"
 #include "srsran/common/mac_pcap.h"
@@ -47,6 +48,9 @@ public:
   /* Update the last received message timestamp */
   std::function<void()> update_rx_timestamp = []() {};
 
+  /* Update timing advance command */
+  std::function<void(uint32_t)> update_timing_advance = [](uint32_t) {};
+
 private:
   srslog::basic_logger&             logger;
   std::mutex                        mutex;
@@ -55,6 +59,8 @@ private:
   std::shared_ptr<srsran::mac_pcap> pcap_writer;
   srsran::phy_cfg_nr_t              phy_cfg       = {};
   FFTProcessor*                     fft_processor = nullptr;
+  static TraceSamples               tracer_dl_pdsch;  // DCI DL + PDSCH
+  static TraceSamples               tracer_dl_dci_ul; // DCI UL
 
   double             srate             = 0;
   uint32_t           sf_len            = 0;

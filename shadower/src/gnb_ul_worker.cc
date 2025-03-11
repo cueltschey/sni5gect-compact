@@ -2,6 +2,10 @@
 
 #include "shadower/hdr/gnb_ul_worker.h"
 #include "shadower/hdr/utils.h"
+
+// Tracer singleton
+TraceSamples GNBULWorker::tracer_ul_pusch;
+
 GNBULWorker::GNBULWorker(srslog::basic_logger&             logger_,
                          ShadowerConfig&                   config_,
                          srsue::nr::state&                 phy_state_,
@@ -55,6 +59,10 @@ bool GNBULWorker::init(srsran::phy_cfg_nr_t& phy_cfg_)
     logger.error("Couldn't allocate and/or initialize softbuffer");
     return false;
   }
+
+  GNBULWorker::tracer_ul_pusch.init("ipc:///tmp/sni5gect.ul-pusch");
+  GNBULWorker::tracer_ul_pusch.set_throttle_ms(250);
+
   return true;
 }
 
@@ -75,6 +83,7 @@ void GNBULWorker::set_rnti(uint16_t rnti_, srsran_rnti_type_t rnti_type_)
   std::lock_guard<std::mutex> lock(mutex);
   rnti      = rnti_;
   rnti_type = rnti_type_;
+  GNBULWorker::tracer_ul_pusch.reset_throttle();
 }
 
 /* Set the context for the gnb_ul worker */
@@ -102,18 +111,21 @@ void GNBULWorker::work_imp()
     /* Update the last received message time */
     update_rx_timestamp();
     /* Copy the samples to the process buffer */
-    if (slot_in_sf == 0 && config.ul_sample_offset > 0) {
+    if (slot_in_sf == 0 && ta_samples > 0) {
       /* If it is the first slot, then part of the samples is in the last slot */
-      srsran_vec_cf_copy(buffer, task->last_slot->data() + sf_len - config.ul_sample_offset, config.ul_sample_offset);
-      srsran_vec_cf_copy(buffer + config.ul_sample_offset, task->buffer->data(), slot_len - config.ul_sample_offset);
+      srsran_vec_cf_copy(buffer, task->last_slot->data() + sf_len - ta_samples, ta_samples);
+      srsran_vec_cf_copy(buffer + ta_samples, task->buffer->data(), slot_len - ta_samples);
     } else {
       /* only copy half of the subframe to the buffer */
-      srsran_vec_cf_copy(buffer, task->buffer->data() + slot_in_sf * slot_len - config.ul_sample_offset, slot_len);
+      srsran_vec_cf_copy(buffer, task->buffer->data() + slot_in_sf * slot_len - ta_samples, slot_len);
     }
     /* estimate FFT will run on first slot */
     srsran_gnb_ul_fft(&gnb_ul);
     /* PUSCH search and decoding */
     handle_pusch(slot_cfg);
+
+    /* Trace slot */
+    GNBULWorker::tracer_ul_pusch.send(task->buffer->data(), sf_len);
   }
 }
 
@@ -121,7 +133,7 @@ void GNBULWorker::work_imp()
 void GNBULWorker::handle_pusch(srsran_slot_cfg_t& slot_cfg)
 {
   /* Apply the CFO to correct the OFDM symbols */
-  srsran_vec_apply_cfo(gnb_ul.sf_symbols[0], config.uplink_cfo, gnb_ul.sf_symbols[0], nof_re);
+  srsran_vec_apply_cfo(gnb_ul.sf_symbols[0], config.uplink_cfo_correction, gnb_ul.sf_symbols[0], nof_re);
   /* Initialize the buffer for output */
   srsran::unique_byte_buffer_t data = srsran::make_byte_buffer();
   if (data == nullptr) {

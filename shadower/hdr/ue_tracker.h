@@ -34,7 +34,7 @@ public:
   bool init();
 
   /* Initialize the logger and pcap writer, then enable the UE tracker */
-  void activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_);
+  void activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_, uint32_t time_advance);
 
   /* Deactivate UETracker and put back to the worker pool */
   void deactivate();
@@ -65,6 +65,11 @@ public:
 
   /* Update the last received message timestamp */
   void update_last_rx_timestamp();
+
+  std::function<void()> on_deactivate = []() {};
+
+  /* Update timing advance */
+  void update_timing_advance(uint32_t ta_command);
 
 private:
   srslog::basic_logger& logger = srslog::fetch_basic_logger("UETracker");
@@ -104,8 +109,10 @@ private:
   std::map<uint32_t, srsran_csi_rs_zp_resource_t>                        csi_rs_zp_res  = {};
   std::map<uint32_t, srsran_csi_rs_nzp_resource_t>                       csi_rs_nzp_res = {};
 
-  srsran::phy_cfg_nr_t phy_cfg   = {}; // physical configuration
-  srsue::nr::state     phy_state = {}; // UE side grant tracker
+  srsran::phy_cfg_nr_t phy_cfg   = {};   // physical configuration
+  srsue::nr::state     phy_state = {};   // UE side grant tracker
+  uint32_t             n_timing_advance; // Timing advance steps
+  double               ta_time;          // Timing advance time
 
   /* cell group config */
   asn1::rrc_nr::cell_group_cfg_s  cell_group_cfg = {};

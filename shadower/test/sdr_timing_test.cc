@@ -16,7 +16,7 @@ SafeQueue<Task>   task_queue = {};
 std::atomic<bool> running{true};
 std::atomic<bool> cell_found{false};
 double            test_ssb_freq = 3426.24e6;
-std::string       sdr_args      = "serial=31BAD9E";
+std::string       sdr_args      = "type=b200";
 uint32_t          ssb_offset    = 1650;
 uint32_t          advancement   = 7;
 uint32_t          test_round    = 1000;
@@ -204,8 +204,10 @@ int main(int argc, char* argv[])
   logger.set_level(srslog::basic_levels::debug);
 
   /* Initialize source */
-  Source* source =
-      new SDRSource(sdr_args, config.sample_rate, config.dl_freq, config.ul_freq, config.rx_gain, config.tx_gain);
+
+  create_source_t uhd_source = load_source(uhd_source_module_path);
+  config.source_params       = sdr_args;
+  Source* source             = uhd_source(config);
   logger.info("Selected target test SSB frequency %.3f MHz", test_ssb_freq / 1e6);
 
   /* initialize SSB */

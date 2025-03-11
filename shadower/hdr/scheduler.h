@@ -6,6 +6,7 @@
 #include "shadower/hdr/source.h"
 #include "shadower/hdr/syncer.h"
 #include "shadower/hdr/thread_pool.h"
+#include "shadower/hdr/trace_samples.h"
 #include "shadower/hdr/ue_tracker.h"
 #include "shadower/hdr/wd_worker.h"
 #include "srsran/common/threads.h"
@@ -42,13 +43,16 @@ private:
   void push_new_task(std::shared_ptr<Task>& task);
 
   /* handler to activate new UE tracker when new RACH msg2 is found */
-  void handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& grant, uint32_t current_slot);
+  void
+  handle_new_ue_found(uint16_t rnti, std::array<uint8_t, 27UL>& grant, uint32_t current_slot, uint32_t time_advance);
 
   /* handler to apply MIB configuration to multiple workers */
   void handle_mib(srsran_mib_nr_t& mib, uint32_t ncellid);
 
   /* handler to apply sib1 configuration to multiple workers */
   void handle_sib1(asn1::rrc_nr::sib1_s& sib1);
+
+  void on_ue_deactivate();
 
   /* list of UE trackers */
   std::vector<std::shared_ptr<UETracker> > ue_trackers = {};
