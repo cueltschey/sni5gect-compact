@@ -89,3 +89,6 @@ target_link_libraries(registration_accept_constructor ${SRSUE_SOURCES} ${SRSRAN_
 
 add_executable(fft_test fft_test.cc ${SHADOWER_DIR}/fft_processor.cc ${TestCommonSources})
 target_link_libraries(fft_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} ${FFT_LIBRARIES} gpu_utils CUDA::cufft CUDA::cudart)
+
+add_executable(ldpc_test ldpc_test.cc)
+target_link_libraries(ldpc_test PRIVATE ${SRSUE_SOURCES} ${SRSRAN_SOURCES} srsran_phch srsran_fec)
