@@ -4,7 +4,7 @@ add_executable(source_test source_test.cc ${TestCommonSources})
 target_link_libraries(source_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(cell_search_test cell_search_test.cc ${TestCommonSources})
-target_link_libraries(cell_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(cell_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} ssb_cuda)
 
 add_executable(search_ssb_freq_test search_ssb_freq_test.cc ${TestCommonSources})
 target_link_libraries(search_ssb_freq_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})

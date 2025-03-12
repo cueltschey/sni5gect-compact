@@ -27,6 +27,9 @@
 #include "srsran/phy/dft/dft.h"
 #include "srsran/phy/phch/pbch_nr.h"
 #include <inttypes.h>
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 /**
  * @brief Default SSB maximum sampling rate
@@ -313,5 +316,7 @@ SRSRAN_API uint32_t srsran_ssb_candidate_sf_idx(const srsran_ssb_t* q, uint32_t 
 SRSRAN_API uint32_t srsran_ssb_candidate_sf_offset(const srsran_ssb_t* q, uint32_t ssb_idx);
 
 SRSRAN_API uint32_t srsran_ssb_cfg_to_str(const srsran_ssb_cfg_t* cfg, char* str, uint32_t str_len);
-
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 #endif // SRSRAN_SSB_H

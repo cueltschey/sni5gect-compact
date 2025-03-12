@@ -1,3 +1,4 @@
+#include "shadower/hdr/ssb_cuda.cuh"
 #include "shadower/hdr/utils.h"
 #include "srsran/phy/phch/pbch_msg_nr.h"
 #include "srsran/phy/sync/ssb.h"
@@ -9,7 +10,7 @@
 std::string sample_file = "shadower/test/data/srsran/ssb.fc32";
 #elif TEST_TYPE == 2
 std::string sample_file = "shadower/test/data/ssb.fc32";
-#elif TEST_TYPE == 3 
+#elif TEST_TYPE == 3
 std::string sample_file = "shadower/test/data/srsran-n78-40MHz/sib.fc32";
 #endif // TEST_TYPE
 int main()
@@ -65,5 +66,48 @@ int main()
   logger.info("Cell id: %u", res.N_id);
   logger.info("Offset: %u", res.t_offset);
   logger.info("CFO: %f", res.measurements.cfo_hz);
+
+  auto                          start1              = std::chrono::high_resolution_clock::now();
+  srsran_csi_trs_measurements_t csi_trs_measurement = {};
+  srsran_pbch_msg_nr_t          pbch_msg1           = {};
+  if (srsran_ssb_find(&ssb, samples.data(), res.N_id, &csi_trs_measurement, &pbch_msg1) != SRSRAN_SUCCESS) {
+    logger.error("Error running srsran_ssb_find");
+    return -1;
+  }
+  auto end1     = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1);
+  logger.info("srsran_ssb_find: %ld us", duration.count());
+
+  auto                          start        = std::chrono::high_resolution_clock::now();
+  srsran_csi_trs_measurements_t measurements = {};
+  srsran_pbch_msg_nr_t          pbch_msg     = {};
+  uint32_t                      half_frame   = 0;
+  if (srsran_ssb_track(&ssb, samples.data(), res.N_id, pbch_msg.ssb_idx, half_frame, &measurements, &pbch_msg) !=
+      SRSRAN_SUCCESS) {
+    logger.error("Error running srsran_ssb_track");
+    return -1;
+  }
+  auto end       = std::chrono::high_resolution_clock::now();
+  auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  logger.info("srsran_ssb_track: %ld us", duration1.count());
+
+  SSBCuda ssb_cuda(srate, dl_freq, ssb_freq, scs, pattern, duplex);
+  if (!ssb_cuda.init(SRSRAN_NID_2_NR(res.N_id))) {
+    logger.error("Failed to initialize SSB CUDA");
+    return -1;
+  }
+  uint32_t found_delay_test = 0;
+  cf_t*    temp_buffer      = srsran_vec_cf_malloc(sf_len * 2);
+  srsran_vec_cf_zero(temp_buffer, ssb.ssb_sz);
+  srsran_vec_cf_copy(&temp_buffer[ssb.ssb_sz], samples.data(), sf_len);
+
+  auto start2 = std::chrono::high_resolution_clock::now();
+  ssb_cuda.ssb_pss_find_cuda(temp_buffer, ssb.ssb_sz + sf_len, &found_delay_test);
+  printf("Found delay: %u\n", found_delay_test);
+  auto end2      = std::chrono::high_resolution_clock::now();
+  auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
+  logger.info("ssb_pss_find_cuda: %ld us", duration2.count());
+
+  ssb_cuda.cleanup();
   return 0;
 }

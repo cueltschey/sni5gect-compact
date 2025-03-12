@@ -129,6 +129,11 @@ set_source_files_properties(hdr/gpu_utils.cuh PROPERTIES LANGUAGE CUDA)
 add_library(gpu_utils src/gpu_utils.cu hdr/gpu_utils.cuh)
 target_link_libraries(gpu_utils CUDA::cufft CUDA::cudart)
 
+set_source_files_properties(src/ssb_cuda.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(hdr/ssb_cuda.cuh PROPERTIES LANGUAGE CUDA)
+add_library(ssb_cuda src/ssb_cuda.cu hdr/ssb_cuda.cuh)
+target_link_libraries(ssb_cuda CUDA::cufft CUDA::cudart srsran_sync)
+
 add_executable(srsran_recorder tools/srsran_recorder.cc)
 target_link_libraries(srsran_recorder ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
 add_executable(shadower 
