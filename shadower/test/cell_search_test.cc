@@ -97,16 +97,13 @@ int main()
     return -1;
   }
   uint32_t found_delay_test = 0;
-  cf_t*    temp_buffer      = srsran_vec_cf_malloc(sf_len * 2);
-  srsran_vec_cf_zero(temp_buffer, ssb.ssb_sz);
-  srsran_vec_cf_copy(&temp_buffer[ssb.ssb_sz], samples.data(), sf_len);
 
   auto start2 = std::chrono::high_resolution_clock::now();
-  ssb_cuda.ssb_pss_find_cuda(temp_buffer, ssb.ssb_sz + sf_len, &found_delay_test);
-  printf("Found delay: %u\n", found_delay_test);
+  ssb_cuda.ssb_pss_find_cuda(samples.data(), sf_len, &found_delay_test);
   auto end2      = std::chrono::high_resolution_clock::now();
   auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
   logger.info("ssb_pss_find_cuda: %ld us", duration2.count());
+  printf("Found delay: %u\n", found_delay_test);
 
   ssb_cuda.cleanup();
   return 0;

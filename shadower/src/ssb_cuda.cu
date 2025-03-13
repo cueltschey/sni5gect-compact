@@ -99,6 +99,7 @@ bool SSBCuda::init(uint32_t N_id_2)
   }
 
   cufftPlan1d(&fft_plan, ssb.corr_sz, CUFFT_C2C, 1);
+  cudaMallocHost((void**)&h_pin_time, (ssb.sf_sz + ssb.ssb_sz) * sizeof(cufftComplex));
   cudaMalloc((void**)&d_freq, ssb.corr_sz * sizeof(cufftComplex));
   cudaMalloc((void**)&d_time, ssb.corr_sz * sizeof(cufftComplex));
   cudaMalloc((void**)&d_corr, ssb.corr_sz * sizeof(cufftComplex));
@@ -119,17 +120,20 @@ int SSBCuda::ssb_pss_find_cuda(cf_t* in, uint32_t nof_samples, uint32_t* found_d
   uint32_t best_delay = 0;
   float    best_corr  = 0;
   uint32_t t_offset   = 0;
-  while ((t_offset + ssb.symbol_sz) < nof_samples) {
+  uint32_t total_len  = nof_samples + ssb.ssb_sz;
+  memcpy(h_pin_time, h_pin_time + ssb.sf_sz, sizeof(cufftComplex) * ssb.ssb_sz);
+  memcpy(h_pin_time + ssb.ssb_sz, in, sizeof(cufftComplex) * nof_samples);
+  while ((t_offset + ssb.symbol_sz) < total_len) {
     // Number of samples taken in this iteration
     uint32_t chunk_size = ssb.corr_sz;
 
     // Detect if the correlation input exceeds the input length, take the maximum amount of samples
-    if (t_offset + ssb.corr_sz > nof_samples) {
-      chunk_size = nof_samples - t_offset;
+    if (t_offset + ssb.corr_sz > total_len) {
+      chunk_size = total_len - t_offset;
     }
 
     // Copy the amount of samples
-    cudaMemcpyAsync(d_time, in + t_offset, sizeof(cufftComplex) * chunk_size, cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(d_time, h_pin_time + t_offset, sizeof(cufftComplex) * chunk_size, cudaMemcpyHostToDevice, stream);
 
     // Append zeros if there's space left
     if (chunk_size < ssb.corr_sz) {
