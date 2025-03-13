@@ -33,6 +33,11 @@ private:
   cudaStream_t  stream; // CUDA stream for asynchronous data transfer
   cufftComplex *h_pin_time = nullptr, *d_freq = nullptr, *d_time = nullptr, *d_corr = nullptr, *d_pss_seq = nullptr;
 
+  int    compareBlocksPerGrid;
+  float *d_block_max_vals, *h_block_max_vals;
+  int *  d_block_max_idxs, *h_block_max_idxs;
+  void   find_max(float* d_data, int size, float* max_val, int* max_idx);
+
   float *d_corr_mag = nullptr, *d_power = nullptr;
 };
 #endif // SSB_CUDA_H

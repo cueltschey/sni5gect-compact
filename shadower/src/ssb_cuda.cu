@@ -39,6 +39,62 @@ __global__ void normalize_correlation(float* corr, float* power, int N, float sc
   }
 }
 
+__global__ void find_max_kernel(float* d_data, int size, float* d_max_val, int* d_max_idx)
+{
+  extern __shared__ float shared_data[];
+  int*                    shared_idx = (int*)&shared_data[blockDim.x];
+
+  int tid = threadIdx.x;
+  int idx = blockIdx.x * blockDim.x + tid;
+
+  // Load data into shared memory
+  if (idx < size) {
+    shared_data[tid] = d_data[idx];
+    shared_idx[tid]  = idx;
+  } else {
+    shared_data[tid] = -1e10f; // Very small value for comparison
+    shared_idx[tid]  = -1;
+  }
+  __syncthreads();
+
+  // Perform reduction to find max value
+  for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+    if (tid < stride) {
+      if (shared_data[tid] < shared_data[tid + stride]) {
+        shared_data[tid] = shared_data[tid + stride];
+        shared_idx[tid]  = shared_idx[tid + stride];
+      }
+    }
+    __syncthreads();
+  }
+
+  // Write the result of this block to global memory
+  if (tid == 0) {
+    d_max_val[blockIdx.x] = shared_data[0];
+    d_max_idx[blockIdx.x] = shared_idx[0];
+  }
+}
+
+void SSBCuda::find_max(float* d_data, int size, float* max_val, int* max_idx)
+{
+  // clang-format off
+  find_max_kernel<<<compareBlocksPerGrid, THREADS_PER_BLOCK, THREADS_PER_BLOCK * (sizeof(float) + sizeof(int))>>>(d_data, size, d_block_max_vals, d_block_max_idxs);
+  // clang-format on
+  cudaMemcpyAsync(
+      h_block_max_vals, d_block_max_vals, compareBlocksPerGrid * sizeof(float), cudaMemcpyDeviceToHost, stream);
+  cudaMemcpyAsync(
+      h_block_max_idxs, d_block_max_idxs, compareBlocksPerGrid * sizeof(int), cudaMemcpyDeviceToHost, stream);
+  // Final reduction on CPU
+  *max_val = h_block_max_vals[0];
+  *max_idx = h_block_max_idxs[0];
+  for (int i = 1; i < compareBlocksPerGrid; i++) {
+    if (h_block_max_vals[i] > *max_val) {
+      *max_val = h_block_max_vals[i];
+      *max_idx = h_block_max_idxs[i];
+    }
+  }
+}
+
 SSBCuda::SSBCuda(double                      srate_,
                  double                      dl_freq_,
                  double                      ssb_freq_,
@@ -104,9 +160,14 @@ bool SSBCuda::init(uint32_t N_id_2)
   cudaMalloc((void**)&d_time, ssb.corr_sz * sizeof(cufftComplex));
   cudaMalloc((void**)&d_corr, ssb.corr_sz * sizeof(cufftComplex));
   cudaMalloc((void**)&d_pss_seq, ssb.corr_sz * sizeof(cufftComplex));
-  cudaMalloc((void**)&d_corr_mag, ssb.corr_sz * sizeof(float));
+  cudaMalloc((void**)&d_corr_mag, ssb.corr_window * sizeof(float));
   cudaMalloc((void**)&d_power, ssb.corr_sz * sizeof(float));
   cudaMemcpy(d_pss_seq, ssb.pss_seq[N_id_2], ssb.corr_sz * sizeof(cufftComplex), cudaMemcpyHostToDevice);
+  compareBlocksPerGrid = (ssb.corr_window + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+  cudaMalloc((void**)&d_block_max_vals, compareBlocksPerGrid * sizeof(float));
+  cudaMalloc((void**)&d_block_max_idxs, compareBlocksPerGrid * sizeof(int));
+  h_block_max_vals = (float*)malloc(compareBlocksPerGrid * sizeof(float));
+  h_block_max_idxs = (int*)malloc(compareBlocksPerGrid * sizeof(int));
   cudaStreamCreate(&stream);
   cufftSetStream(fft_plan, stream);
   return true;
@@ -160,12 +221,10 @@ int SSBCuda::ssb_pss_find_cuda(cf_t* in, uint32_t nof_samples, uint32_t* found_d
     compute_power<<<blocks, THREADS_PER_BLOCK>>>(d_corr, d_corr_mag, ssb.corr_window);
     cudaStreamSynchronize(stream);
     // clang-format on 
-    // Find the maximum correlation peak index
-    thrust::device_ptr<float> dev_corr_mag(d_corr_mag);
-    thrust::device_ptr<float> max_ptr = thrust::max_element(dev_corr_mag, dev_corr_mag +ssb.corr_window);
-    uint32_t peak_idx = max_ptr - dev_corr_mag;
+
     float peak_val;
-    cudaMemcpy(&peak_val, d_corr_mag + peak_idx, sizeof(float), cudaMemcpyDeviceToHost);
+    int peak_idx;
+    find_max(d_corr_mag, ssb.corr_window, &peak_val, &peak_idx);
 
     if (best_corr < peak_val) {
       best_corr  = peak_val;
