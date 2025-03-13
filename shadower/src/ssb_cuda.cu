@@ -1,5 +1,6 @@
-#define THREADS_PER_BLOCK 256
+#define THREADS_PER_BLOCK 32
 #include "shadower/hdr/ssb_cuda.cuh"
+#include <chrono>
 #include <complex>
 #include <cuda_runtime_api.h>
 #include <cufft.h>
@@ -30,19 +31,10 @@ __global__ void compute_power(cufftComplex* input, float* power, int N)
   }
 }
 
-// Kernel to normalize the correlation
-__global__ void normalize_correlation(float* corr, float* power, int N, float scale_factor)
-{
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < N && power[idx] > 0) {
-    corr[idx] /= (power[idx] * scale_factor);
-  }
-}
-
 __global__ void find_max_kernel(float* d_data, int size, float* d_max_val, int* d_max_idx)
 {
-  extern __shared__ float shared_data[];
-  int*                    shared_idx = (int*)&shared_data[blockDim.x];
+  __shared__ float shared_data[1024];
+  __shared__ float shared_idx[1024];
 
   int tid = threadIdx.x;
   int idx = blockIdx.x * blockDim.x + tid;
@@ -211,19 +203,14 @@ int SSBCuda::ssb_pss_find_cuda(cf_t* in, uint32_t nof_samples, uint32_t* found_d
     complex_conj_mult<<<blocks, THREADS_PER_BLOCK>>>(d_freq, d_pss_seq, d_corr, ssb.corr_sz);
     // clang-format on
 
-    cudaStreamSynchronize(stream);
-
     cufftExecC2C(fft_plan, d_corr, d_corr, CUFFT_INVERSE);
-
-    cudaStreamSynchronize(stream);
 
     // clang-format off
     compute_power<<<blocks, THREADS_PER_BLOCK>>>(d_corr, d_corr_mag, ssb.corr_window);
-    cudaStreamSynchronize(stream);
     // clang-format on 
 
-    float peak_val;
-    int peak_idx;
+    float peak_val = 0;
+    int peak_idx = 0;
     find_max(d_corr_mag, ssb.corr_window, &peak_val, &peak_idx);
 
     if (best_corr < peak_val) {
