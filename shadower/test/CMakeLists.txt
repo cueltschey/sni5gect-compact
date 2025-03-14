@@ -10,7 +10,7 @@ add_executable(search_ssb_freq_test search_ssb_freq_test.cc ${TestCommonSources}
 target_link_libraries(search_ssb_freq_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(syncer_test syncer_test.cc ${TestCommonSources} ${SHADOWER_DIR}/syncer.cc)
-target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} zmq)
+target_link_libraries(syncer_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} zmq ssb_cuda)
 
 add_executable(sib_search_test sib_search_test.cc ${SHADOWER_DIR}/fft_processor.cc ${TestCommonSources})
 target_link_libraries(sib_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} CUDA::cufft CUDA::cudart gpu_utils)
@@ -62,16 +62,16 @@ add_executable(sib_overshadow_test sib_overshadow_test.cc ${TestCommonSources}
     ${SHADOWER_DIR}/syncer.cc
     ${SHADOWER_DIR}/ring_buffer.cc
 )
-target_link_libraries(sib_overshadow_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} zmq)
+target_link_libraries(sib_overshadow_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} zmq ssb_cuda)
 
 add_executable(prach_detect_test prach_detect_test.cc ${TestCommonSources})
 target_link_libraries(prach_detect_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(prach_search_test prach_search_test.cc ${TestCommonSources} ${SHADOWER_DIR}/file_source.cc ${SHADOWER_DIR}/syncer.cc)
-target_link_libraries(prach_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(prach_search_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} ssb_cuda)
 
 add_executable(sdr_timing_test sdr_timing_test.cc ${TestCommonSources} ${SHADOWER_DIR}/uhd_source.cc ${SHADOWER_DIR}/syncer.cc)
-target_link_libraries(sdr_timing_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(sdr_timing_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} ssb_cuda)
 
 add_executable(exploit_rrc_setup_test exploit_rrc_setup_test.cc ${TestCommonSources} ${SHADOWER_DIR}/wd_worker.cc)
 target_link_libraries(exploit_rrc_setup_test ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)

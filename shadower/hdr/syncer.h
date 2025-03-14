@@ -3,6 +3,7 @@
 #include "shadower/hdr/constants.h"
 #include "shadower/hdr/safe_queue.h"
 #include "shadower/hdr/source.h"
+#include "shadower/hdr/ssb_cuda.cuh"
 #include "shadower/hdr/task.h"
 #include "shadower/hdr/trace_samples.h"
 #include "srsran/common/threads.h"
@@ -51,6 +52,8 @@ private:
   uint32_t     slot_per_sf;
   Source*      source = nullptr;
   TraceSamples tracer_sib1;
+
+  SSBCuda* ssb_cuda = nullptr;
 
   float    cfo_hz          = 0;
   uint32_t task_idx        = 0;

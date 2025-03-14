@@ -154,7 +154,7 @@ add_executable(shadower
   src/trace_samples.cc
 )
 target_include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src)
-target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${Boost_LIBRARIES} wdissector gpu_utils CUDA::cufft CUDA::cudart)
+target_link_libraries(shadower ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${Boost_LIBRARIES} wdissector gpu_utils ssb_cuda)
 include_directories(shadower PRIVATE ${WDISSECTOR_PATH}/src ${WDISSECTOR_INCLUDES})
 
 set(SHADOWER_DIR ${CMAKE_HOME_DIRECTORY}/shadower/src)
