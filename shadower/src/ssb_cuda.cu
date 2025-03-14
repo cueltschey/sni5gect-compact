@@ -1,5 +1,7 @@
 #define THREADS_PER_BLOCK 256
 #include "shadower/hdr/ssb_cuda.cuh"
+#include "srsran/phy/ch_estimation/dmrs_pbch.h"
+#include "srsran/phy/utils/vector.h"
 #include <chrono>
 #include <complex>
 #include <cuda_runtime_api.h>
@@ -145,8 +147,9 @@ void SSBCuda::cleanup()
   srsran_ssb_free(&ssb);
 }
 
-bool SSBCuda::init(uint32_t N_id_2)
+bool SSBCuda::init(uint32_t N_id_2_)
 {
+  N_id_2                     = N_id_2_;
   srsran_ssb_args_t ssb_args = {};
   ssb_args.max_srate_hz      = srate;
   ssb_args.min_scs           = scs;
@@ -189,7 +192,7 @@ bool SSBCuda::init(uint32_t N_id_2)
   cudaMemcpy(d_pss_seq, ssb.pss_seq[N_id_2], ssb.corr_sz * sizeof(cufftComplex), cudaMemcpyHostToDevice);
 
   // Allocate memory for CUDA kernel to find max value
-  compareBlocksPerGrid = (ssb.corr_window + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+  compareBlocksPerGrid = (total_len + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
   cudaMalloc((void**)&d_block_max_vals, compareBlocksPerGrid * sizeof(float));
   cudaMalloc((void**)&d_block_max_idxs, compareBlocksPerGrid * sizeof(int));
   h_block_max_vals = (float*)malloc(compareBlocksPerGrid * sizeof(float));
@@ -235,21 +238,6 @@ int SSBCuda::ssb_pss_find_cuda(cf_t* in, uint32_t nof_samples, uint32_t* found_d
   // clang-format off
   compute_power<<<compareNumBlocks, THREADS_PER_BLOCK>>>(d_corr, d_corr_mag, total_len);
   // clang-format on
-
-  //   float best_corr  = 0;
-  //   int   best_delay = -1;
-  //   for (int r = 0; r < round; r++) {
-  //     float round_max_corr  = 0;
-  //     int   round_max_delay = -1;
-  //     find_max(d_corr_mag + r * ssb.corr_sz, ssb.corr_window, &round_max_corr, &round_max_delay);
-  //     if (round_max_corr > best_corr) {
-  //       best_corr  = round_max_corr;
-  //       best_delay = r * ssb.corr_window + round_max_delay;
-  //     }
-  //   }
-  //   *found_delay = best_delay;
-  //   return 0;
-  // }
   float best_corr  = 0;
   int   best_delay = -1;
   find_max(d_corr_mag, total_len, &best_corr, &best_delay);
@@ -258,4 +246,77 @@ int SSBCuda::ssb_pss_find_cuda(cf_t* in, uint32_t nof_samples, uint32_t* found_d
   round_offset = best_delay % ssb.corr_sz;
   *found_delay = round_number * ssb.corr_window + round_offset;
   return 0;
+}
+
+int SSBCuda::ssb_run_sync_find(cf_t*                          buffer,
+                               uint32_t                       N_id,
+                               srsran_csi_trs_measurements_t* meas,
+                               srsran_pbch_msg_nr_t*          pbch_msg)
+{
+  if (buffer == nullptr || meas == nullptr || pbch_msg == nullptr) {
+    return -1;
+  }
+  SRSRAN_MEM_ZERO(pbch_msg, srsran_pbch_msg_nr_t, 1);
+
+  /* Search for PSS in time domain */
+  uint32_t t_offset = 0;
+  if (ssb_pss_find_cuda(buffer, ssb.sf_sz, &t_offset) != 0) {
+    logger.error("Error search for NID 2");
+    return -1;
+  }
+
+  // Remove CP offset prior demodulation
+  if (t_offset >= ssb.cp_sz) {
+    t_offset -= ssb.cp_sz;
+  } else {
+    t_offset += 0;
+  }
+  // Make sure SSB time offset is in bounded in the input buffer
+  if (t_offset > ssb.sf_sz) {
+    return SRSRAN_SUCCESS;
+  }
+
+  // Demodulate
+  cf_t ssb_grid[SRSRAN_SSB_NOF_RE] = {};
+  if (ssb_demodulate(&ssb, (cf_t*)h_pin_time, t_offset, 0.0f, ssb_grid) < SRSRAN_SUCCESS) {
+    ERROR("Error demodulating");
+    return SRSRAN_ERROR;
+  }
+
+  // Measure selected N_id
+  if (ssb_measure(&ssb, ssb_grid, N_id, meas)) {
+    ERROR("Error measuring");
+    return SRSRAN_ERROR;
+  }
+
+  // Select the most suitable SSB candidate
+  uint32_t                n_hf      = 0;
+  uint32_t                ssb_idx   = 0; // SSB candidate index
+  srsran_dmrs_pbch_meas_t pbch_meas = {};
+  if (ssb_select_pbch(&ssb, N_id, ssb_grid, &n_hf, &ssb_idx, &pbch_meas) < SRSRAN_SUCCESS) {
+    ERROR("Error selecting PBCH");
+    return SRSRAN_ERROR;
+  }
+
+  // Avoid decoding if the selected PBCH DMRS do not reach the minimum threshold
+  if (pbch_meas.corr < ssb.args.pbch_dmrs_thr) {
+    return SRSRAN_SUCCESS;
+  }
+
+  // Calculate the SSB offset in the subframe
+  uint32_t ssb_offset = srsran_ssb_candidate_sf_offset(&ssb, ssb_idx);
+
+  // Compute PBCH channel estimates
+  if (ssb_decode_pbch(&ssb, N_id, n_hf, ssb_idx, ssb_grid, pbch_msg) < SRSRAN_SUCCESS) {
+    ERROR("Error decoding PBCH");
+    return SRSRAN_ERROR;
+  }
+  
+  // SSB delay in SF
+  float ssb_delay_us = (float)(1e6 * (((double)t_offset - (double)ssb.ssb_sz - (double)ssb_offset) / ssb.cfg.srate_hz));
+
+  // Add delay to measure
+  meas->delay_us += ssb_delay_us;
+
+  return SRSRAN_SUCCESS;
 }

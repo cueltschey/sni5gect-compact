@@ -74,6 +74,11 @@ int main()
     logger.error("Error running srsran_ssb_find");
     return -1;
   }
+  if (!pbch_msg1.crc) {
+    logger.error("PBCH CRC not match (srsran_ssb_find)");
+  } else {
+    logger.info("PBCH CRC matched (srsran_ssb_find)");
+  }
   auto end1     = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1);
   logger.info("srsran_ssb_find: %ld us", duration.count());
@@ -96,15 +101,26 @@ int main()
     logger.error("Failed to initialize SSB CUDA");
     return -1;
   }
-  uint32_t found_delay_test = 0;
 
   auto start2 = std::chrono::high_resolution_clock::now();
-  ssb_cuda.ssb_pss_find_cuda(samples.data(), sf_len, &found_delay_test);
+  ssb_cuda.ssb_run_sync_find(samples.data(), res.N_id, &measurements, &pbch_msg);
   auto end2      = std::chrono::high_resolution_clock::now();
   auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
-  logger.info("ssb_pss_find_cuda: %ld us", duration2.count());
-  printf("Found delay: %u\n", found_delay_test);
+  logger.info("ssb_run_sync_find: %ld us", duration2.count());
 
+  srsran_mib_nr_t mib_cuda = {};
+  if (pbch_msg.crc) {
+    logger.info("PBCH CRC matched");
+  } else {
+    logger.error("PBCH CRC not match");
+    return -1;
+  }
+  if (srsran_pbch_msg_nr_mib_unpack(&pbch_msg, &mib_cuda) < SRSRAN_SUCCESS) {
+    logger.error("Error running srsran_pbch_msg_nr_mib_unpack");
+    return -1;
+  }
+  srsran_pbch_msg_nr_mib_info(&mib_cuda, mib_info_str.data(), (uint32_t)mib_info_str.size());
+  logger.info(YELLOW "Found cell: %s" RESET, mib_info_str.data());
   ssb_cuda.cleanup();
   return 0;
 }

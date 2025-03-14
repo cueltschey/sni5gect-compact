@@ -23,6 +23,7 @@
 #define SRSRAN_SSB_H
 
 #include "srsran/config.h"
+#include "srsran/phy/ch_estimation/dmrs_pbch.h"
 #include "srsran/phy/common/phy_common_nr.h"
 #include "srsran/phy/dft/dft.h"
 #include "srsran/phy/phch/pbch_nr.h"
@@ -278,6 +279,31 @@ SRSRAN_API int srsran_ssb_find(srsran_ssb_t*                  q,
                                uint32_t                       N_id,
                                srsran_csi_trs_measurements_t* meas,
                                srsran_pbch_msg_nr_t*          pbch_msg);
+
+int ssb_demodulate(srsran_ssb_t* q,
+                   const cf_t*   in,
+                   uint32_t      t_offset,
+                   float         coarse_cfo_hz,
+                   cf_t          ssb_grid[SRSRAN_SSB_NOF_RE]);
+
+int ssb_measure(srsran_ssb_t*                  q,
+                const cf_t                     ssb_grid[SRSRAN_SSB_NOF_RE],
+                uint32_t                       N_id,
+                srsran_csi_trs_measurements_t* meas);
+
+int ssb_select_pbch(srsran_ssb_t*            q,
+                    uint32_t                 N_id,
+                    const cf_t               ssb_grid[SRSRAN_SSB_NOF_RE],
+                    uint32_t*                found_n_hf,
+                    uint32_t*                found_ssb_idx_4lsb,
+                    srsran_dmrs_pbch_meas_t* pbch_meas);
+
+int ssb_decode_pbch(srsran_ssb_t*         q,
+                    uint32_t              N_id,
+                    uint32_t              n_hf,
+                    uint32_t              ssb_idx,
+                    const cf_t            ssb_grid[SRSRAN_SSB_NOF_RE],
+                    srsran_pbch_msg_nr_t* msg);
 
 /**
  * @brief Track SSB by performing measurements and decoding PBCH
