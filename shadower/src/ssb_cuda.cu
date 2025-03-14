@@ -1,4 +1,4 @@
-#define THREADS_PER_BLOCK 32
+#define THREADS_PER_BLOCK 256
 #include "shadower/hdr/ssb_cuda.cuh"
 #include <chrono>
 #include <complex>
@@ -10,15 +10,20 @@
 #include <vector>
 
 // Kernel for complex conjugate multiplication in the frequency domain
-__global__ void complex_conj_mult(cufftComplex* input, cufftComplex* pss_seq, cufftComplex* output, int N)
+__global__ void
+complex_conj_mult_slide_window(cufftComplex* input, cufftComplex* pss_seq, cufftComplex* output, uint32_t pss_size)
 {
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < N) {
-    cufftComplex a = input[idx];
-    cufftComplex b = pss_seq[idx]; // Assume pre-conjugated
-    b.y            = -b.y;
-    output[idx].x  = a.x * b.x - a.y * b.y;
-    output[idx].y  = a.x * b.y + a.y * b.x;
+  int tidx        = threadIdx.x;
+  int seg_idx     = blockIdx.y;
+  int element_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  int idx         = seg_idx * pss_size + element_idx;
+
+  if (element_idx < pss_size) {
+    cufftComplex e   = input[idx];
+    cufftComplex pss = pss_seq[element_idx];
+    pss.y            = -pss.y;
+    output[idx].x    = e.x * pss.x - e.y * pss.y;
+    output[idx].y    = e.x * pss.y + e.y * pss.x;
   }
 }
 
@@ -101,6 +106,12 @@ SSBCuda::~SSBCuda() {}
 
 void SSBCuda::cleanup()
 {
+  if (h_pin_time) {
+    cudaFreeHost(h_pin_time);
+  }
+  if (d_time) {
+    cudaFree(d_time);
+  }
   if (d_freq) {
     cudaFree(d_freq);
   }
@@ -113,12 +124,25 @@ void SSBCuda::cleanup()
   if (d_corr_mag) {
     cudaFree(d_corr_mag);
   }
-  if (d_power) {
-    cudaFree(d_power);
-  }
   if (fft_plan) {
     cufftDestroy(fft_plan);
   }
+  if (d_block_max_idxs) {
+    cudaFree(d_block_max_idxs);
+  }
+  if (d_block_max_vals) {
+    cudaFree(d_block_max_vals);
+  }
+  if (h_block_max_idxs) {
+    free(h_block_max_idxs);
+  }
+  if (h_block_max_vals) {
+    free(h_block_max_vals);
+  }
+  if (stream) {
+    cudaStreamDestroy(stream);
+  }
+  srsran_ssb_free(&ssb);
 }
 
 bool SSBCuda::init(uint32_t N_id_2)
@@ -146,20 +170,32 @@ bool SSBCuda::init(uint32_t N_id_2)
     return false;
   }
 
-  cufftPlan1d(&fft_plan, ssb.corr_sz, CUFFT_C2C, 1);
-  cudaMallocHost((void**)&h_pin_time, (ssb.sf_sz + ssb.ssb_sz) * sizeof(cufftComplex));
-  cudaMalloc((void**)&d_freq, ssb.corr_sz * sizeof(cufftComplex));
-  cudaMalloc((void**)&d_time, ssb.corr_sz * sizeof(cufftComplex));
-  cudaMalloc((void**)&d_corr, ssb.corr_sz * sizeof(cufftComplex));
-  cudaMalloc((void**)&d_pss_seq, ssb.corr_sz * sizeof(cufftComplex));
-  cudaMalloc((void**)&d_corr_mag, ssb.corr_window * sizeof(float));
-  cudaMalloc((void**)&d_power, ssb.corr_sz * sizeof(float));
+  total_len    = ssb.sf_sz + ssb.ssb_sz;
+  last_len     = total_len;
+  round        = (total_len + ssb.corr_window - 1) / ssb.corr_window;
+  total_len    = round * ssb.corr_sz;
+  int n[1]     = {(int)ssb.corr_sz};
+  int embed[1] = {1};
+  cufftPlanMany(&fft_plan, 1, n, embed, 1, ssb.corr_window, embed, 1, ssb.corr_sz, CUFFT_C2C, round);
+  cufftPlan1d(&ifft_plan, ssb.corr_sz, CUFFT_C2C, round);
+  cudaMallocHost((void**)&h_pin_time, total_len * sizeof(cufftComplex)); // Pinned memory
+  cudaMalloc((void**)&d_time, total_len * sizeof(cufftComplex));         // Time domain buffer
+  cudaMalloc((void**)&d_freq, total_len * sizeof(cufftComplex));         // Frequency domain buffer
+  cudaMalloc((void**)&d_corr, total_len * sizeof(cufftComplex));         // Correlation result buffer
+  cudaMalloc((void**)&d_pss_seq, ssb.corr_sz * sizeof(cufftComplex));    // PSS sequence buffer
+  cudaMalloc((void**)&d_corr_mag, total_len * sizeof(cufftComplex));     // Correlation magnitude buffer
+
+  // Copy pss sequence to device
   cudaMemcpy(d_pss_seq, ssb.pss_seq[N_id_2], ssb.corr_sz * sizeof(cufftComplex), cudaMemcpyHostToDevice);
+
+  // Allocate memory for CUDA kernel to find max value
   compareBlocksPerGrid = (ssb.corr_window + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
   cudaMalloc((void**)&d_block_max_vals, compareBlocksPerGrid * sizeof(float));
   cudaMalloc((void**)&d_block_max_idxs, compareBlocksPerGrid * sizeof(int));
   h_block_max_vals = (float*)malloc(compareBlocksPerGrid * sizeof(float));
   h_block_max_idxs = (int*)malloc(compareBlocksPerGrid * sizeof(int));
+
+  // Create a CUDA stream for asynchronous data transfer
   cudaStreamCreate(&stream);
   cufftSetStream(fft_plan, stream);
   return true;
@@ -170,55 +206,56 @@ int SSBCuda::ssb_pss_find_cuda(cf_t* in, uint32_t nof_samples, uint32_t* found_d
   if (ssb.corr_sz == 0) {
     return -1;
   }
-  uint32_t best_delay = 0;
-  float    best_corr  = 0;
-  uint32_t t_offset   = 0;
-  uint32_t total_len  = nof_samples + ssb.ssb_sz;
-  memcpy(h_pin_time, h_pin_time + ssb.sf_sz, sizeof(cufftComplex) * ssb.ssb_sz);
+  /* Copy the end of last ssb_sz to current buffer */
+  memcpy(h_pin_time, h_pin_time + last_len - ssb.ssb_sz, sizeof(cufftComplex) * ssb.ssb_sz);
+  /* Copy the current input buffer to pin buffer */
   memcpy(h_pin_time + ssb.ssb_sz, in, sizeof(cufftComplex) * nof_samples);
-  while ((t_offset + ssb.symbol_sz) < total_len) {
-    // Number of samples taken in this iteration
-    uint32_t chunk_size = ssb.corr_sz;
+  /* Keep tracking the total len */
+  last_len = nof_samples + ssb.ssb_sz;
+  /* Set the remaining buffer to zero */
+  memset(h_pin_time + last_len, 0, sizeof(cufftComplex) * (total_len - last_len));
 
-    // Detect if the correlation input exceeds the input length, take the maximum amount of samples
-    if (t_offset + ssb.corr_sz > total_len) {
-      chunk_size = total_len - t_offset;
-    }
+  /* Copy the data to cuda device */
+  cudaMemcpyAsync(d_time, h_pin_time, sizeof(cufftComplex) * last_len, cudaMemcpyHostToDevice, stream);
 
-    // Copy the amount of samples
-    cudaMemcpyAsync(d_time, h_pin_time + t_offset, sizeof(cufftComplex) * chunk_size, cudaMemcpyHostToDevice, stream);
+  /* Convert time domain data to frequency domain */
+  cufftExecC2C(fft_plan, d_time, d_freq, CUFFT_FORWARD);
 
-    // Append zeros if there's space left
-    if (chunk_size < ssb.corr_sz) {
-      cudaMemsetAsync(d_time + chunk_size, 0, sizeof(cufftComplex) * (ssb.corr_sz - chunk_size), stream);
-    }
+  /* Perform correlation between frequency domain and PSS sequence */
+  dim3 numBlocks((ssb.corr_sz + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, round);
+  // clang-format off
+  complex_conj_mult_slide_window<<<numBlocks, THREADS_PER_BLOCK>>>(d_freq, d_pss_seq, d_corr, ssb.corr_sz);
+  // clang-format on
 
-    // Perform the FFT covnert to frequncy domain
-    cufftExecC2C(fft_plan, d_time, d_freq, CUFFT_FORWARD);
+  /* Convert the frequency domain correlation to time domain */
+  cufftExecC2C(ifft_plan, d_corr, d_corr, CUFFT_INVERSE);
 
-    // Perform correlation between frequency domain and PSS sequence
-    int blocks = (ssb.corr_sz + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+  /* Compute the power of the correlation */
+  int compareNumBlocks = total_len / THREADS_PER_BLOCK;
+  // clang-format off
+  compute_power<<<compareNumBlocks, THREADS_PER_BLOCK>>>(d_corr, d_corr_mag, total_len);
+  // clang-format on
 
-    // clang-format off
-    complex_conj_mult<<<blocks, THREADS_PER_BLOCK>>>(d_freq, d_pss_seq, d_corr, ssb.corr_sz);
-    // clang-format on
-
-    cufftExecC2C(fft_plan, d_corr, d_corr, CUFFT_INVERSE);
-
-    // clang-format off
-    compute_power<<<blocks, THREADS_PER_BLOCK>>>(d_corr, d_corr_mag, ssb.corr_window);
-    // clang-format on 
-
-    float peak_val = 0;
-    int peak_idx = 0;
-    find_max(d_corr_mag, ssb.corr_window, &peak_val, &peak_idx);
-
-    if (best_corr < peak_val) {
-      best_corr  = peak_val;
-      best_delay = peak_idx + t_offset;
-    }
-    t_offset += ssb.corr_window;
-  }
-  *found_delay = best_delay;
+  //   float best_corr  = 0;
+  //   int   best_delay = -1;
+  //   for (int r = 0; r < round; r++) {
+  //     float round_max_corr  = 0;
+  //     int   round_max_delay = -1;
+  //     find_max(d_corr_mag + r * ssb.corr_sz, ssb.corr_window, &round_max_corr, &round_max_delay);
+  //     if (round_max_corr > best_corr) {
+  //       best_corr  = round_max_corr;
+  //       best_delay = r * ssb.corr_window + round_max_delay;
+  //     }
+  //   }
+  //   *found_delay = best_delay;
+  //   return 0;
+  // }
+  float best_corr  = 0;
+  int   best_delay = -1;
+  find_max(d_corr_mag, total_len, &best_corr, &best_delay);
+  int round_number, round_offset;
+  round_number = best_delay / ssb.corr_sz;
+  round_offset = best_delay % ssb.corr_sz;
+  *found_delay = round_number * ssb.corr_window + round_offset;
   return 0;
 }

@@ -29,15 +29,27 @@ private:
   srsran_ssb_pattern_t        pattern;
   srsran_duplex_mode_t        duplex_mode;
 
+  uint32_t total_len;    // ssb_size from last slot
+  int      round;        // Total round of correlation
+  uint32_t last_len = 0; // last slot length
+
   cufftHandle   fft_plan = {};
-  cudaStream_t  stream; // CUDA stream for asynchronous data transfer
-  cufftComplex *h_pin_time = nullptr, *d_freq = nullptr, *d_time = nullptr, *d_corr = nullptr, *d_pss_seq = nullptr;
+  cufftHandle   ifft_plan = {};
+  cudaStream_t  stream;               // CUDA stream for asynchronous data transfer
+  cufftComplex* h_pin_time = nullptr; // Pin host time domain buffer
+  cufftComplex* d_time     = nullptr; // Device time domain buffer
+  cufftComplex* d_freq     = nullptr; // Device frequency domain buffer
+  cufftComplex* d_corr     = nullptr; // Device correlation buffer
+  cufftComplex* d_pss_seq  = nullptr; // Device PSS sequence buffer
+  float*        d_corr_mag = nullptr; // Device correlation magnitude buffer
+
+  // cufftComplex *h_pin_time = nullptr, *d_freq = nullptr, *d_time = nullptr, *d_corr = nullptr, *d_pss_seq = nullptr;
 
   int    compareBlocksPerGrid;
   float *d_block_max_vals, *h_block_max_vals;
   int *  d_block_max_idxs, *h_block_max_idxs;
   void   find_max(float* d_data, int size, float* max_val, int* max_idx);
 
-  float *d_corr_mag = nullptr, *d_power = nullptr;
+  // float *d_corr_mag = nullptr, *d_power = nullptr;
 };
 #endif // SSB_CUDA_H
