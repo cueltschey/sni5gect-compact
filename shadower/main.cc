@@ -63,9 +63,9 @@ int main(int argc, char* argv[])
   Scheduler* scheduler = new Scheduler(config, source, syncer, exploit_creator);
   logger.info(YELLOW "Initialized scheduler" RESET);
   // Start the syncer thread with the highest priority
-  syncer->start(99);
+  syncer->start(0);
   // Start the scheduler thread with lower priority
-  scheduler->start(80);
+  scheduler->start(4);
 
   syncer->wait_thread_finish();
   source->close();

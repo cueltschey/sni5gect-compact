@@ -115,10 +115,9 @@ int main(int argc, char* argv[])
                             rnti_type,
                             slot_len,
                             std::ref(logger));
-  set_thread_priority(attack_thread, 98);
 
   /* start the syncer with highest priority */
-  syncer->start(99);
+  syncer->start(0);
   syncer->wait_thread_finish();
   attack_thread.join();
   source->close();

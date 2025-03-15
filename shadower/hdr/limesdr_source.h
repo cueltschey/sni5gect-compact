@@ -31,7 +31,7 @@ private:
   void set_srate(double sample_rate);
 
   std::function<void(lime::LogLevel, const std::string&)> log_callback =
-      [this](lime::LogLevel level, const std::string& msg) { logger.info("%s", msg.c_str()); };
+      [](lime::LogLevel level, const std::string& msg) { puts(msg.c_str()); };
 };
 
 extern "C" {

@@ -22,7 +22,7 @@ ThreadPool::ThreadPool(size_t numThreads) : stop(false)
     /* set the thread name */
     pthread_setname_np(worker_threads.back().native_handle(), ("worker-" + std::to_string(i)).c_str());
     /* set the thread priority */
-    pthread_setschedprio(worker_threads.back().native_handle(), 60);
+    set_thread_priority(worker_threads.back(), 59);
   }
 }
 

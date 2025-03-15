@@ -72,7 +72,7 @@ void UETracker::activate(uint16_t rnti_, srsran_rnti_type_t rnti_type_, uint32_t
   /* Update last received message timestamp */
   last_message_time = std::chrono::steady_clock::now();
   /* Initialize the gnb_dl thread */
-  start(80);
+  start(3); // Between Syncer and Scheduler
   active = true;
   logger.info(GREEN "UETracker %s activated" RESET, name.c_str());
 }

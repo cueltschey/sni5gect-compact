@@ -9,6 +9,8 @@
 #include <queue>
 #include <thread>
 #include <vector>
+#include <shadower/hdr/utils.h>
+
 class ThreadPool
 {
 public:
