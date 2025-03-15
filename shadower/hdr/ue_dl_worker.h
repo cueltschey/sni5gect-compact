@@ -47,6 +47,9 @@ public:
   /* Update the last received message timestamp */
   std::function<void()> update_rx_timestamp = []() {};
 
+  /* Update timing advance command */
+  std::function<void(uint32_t)> update_timing_advance = [](uint32_t) {};
+
 private:
   srslog::basic_logger&             logger;
   std::mutex                        mutex;

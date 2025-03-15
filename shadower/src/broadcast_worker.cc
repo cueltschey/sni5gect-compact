@@ -79,6 +79,17 @@ bool BroadCastWorker::pdsch_decode(uint32_t slot_idx, uint32_t task_idx)
     logger.debug("Error PDSCH got wrong CRC");
     return false;
   }
+  bool all_zeros = true;
+  for (uint32_t a = 0; a < data->N_bytes; a++) {
+    if (data->msg[a] != 0) {
+      all_zeros = false;
+      break;
+    }
+  }
+  if (all_zeros) {
+    logger.info("Broadcast worker received a message with all zeros");
+    return false;
+  }
   if (pdsch_cfg.grant.rnti_type == srsran_rnti_type_ra) {
     return decode_rar(data, slot_idx, task_idx);
   } else {

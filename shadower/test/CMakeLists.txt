@@ -84,3 +84,6 @@ target_link_libraries(security_mode_command_construction ${SRSUE_SOURCES} ${SRSR
 
 add_executable(registration_accept_constructor registration_accept_constructor.cc ${TestCommonSources} ${SHADOWER_DIR}/msg_helper.cc ${SHADOWER_DIR}/wd_worker.cc)
 target_link_libraries(registration_accept_constructor ${SRSUE_SOURCES} ${SRSRAN_SOURCES} ${UHD_LIBRARIES} ${Boost_LIBRARIES} wdissector)
+
+add_executable(pcap_writer pcap_writer.cc)
+target_link_libraries(pcap_writer ${SRSUE_SOURCES} ${SRSRAN_SOURCES})
