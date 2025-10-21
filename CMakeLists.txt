@@ -62,9 +62,6 @@ configure_file(
 ########################################################################
 # Options
 ########################################################################
-option(ENABLE_SRSUE          "Build srsUE application"                  ON)
-option(ENABLE_SRSENB         "Build srsENB application"                 ON)
-option(ENABLE_SRSEPC         "Build srsEPC application"                 OFF)
 option(DISABLE_SIMD          "Disable SIMD instructions"                OFF)
 option(AUTO_DETECT_ISA       "Autodetect supported ISA extensions"      ON)
 
@@ -690,31 +687,4 @@ add_custom_target(add_srsran_headers SOURCES ${HEADERS_ALL})
 # Add the subdirectories
 ########################################################################
 add_subdirectory(lib)
-
-if(RF_FOUND)
-  if(ENABLE_SRSUE)
-    message(STATUS "Building with srsUE")
-    add_subdirectory(srsue)
-  else(ENABLE_SRSUE)
-    message(STATUS "srsUE build disabled")
-  endif(ENABLE_SRSUE)
-
-  if(ENABLE_SRSENB)
-    message(STATUS "Building with srsENB/srsGNB")
-    add_subdirectory(srsenb)
-    add_subdirectory(srsgnb)
-  else(ENABLE_SRSENB)
-    message(STATUS "srsENB/srsGNB build disabled")
-  endif(ENABLE_SRSENB)
-else(RF_FOUND)
-  message(STATUS "srsUE and srsENB/srsGNB builds disabled due to missing RF driver")
-endif(RF_FOUND)
-
-if(ENABLE_SRSEPC)
-  message(STATUS "Building with srsEPC")
-  add_subdirectory(srsepc)
-else(ENABLE_SRSEPC)
-  message(STATUS "srsEPC build disabled")
-endif(ENABLE_SRSEPC)
-
 add_subdirectory(shadower)
