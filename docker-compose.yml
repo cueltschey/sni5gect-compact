@@ -7,7 +7,7 @@ services:
     container_name: sni5gect
     privileged: true
     restart: unless-stopped
-    entrypoint: /sbin/init
+    #entrypoint: /sbin/init
     network_mode: host
     volumes:
       - "/dev/:/dev/"

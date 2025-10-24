@@ -175,18 +175,18 @@ int parse_args(ShadowerConfig& config, int argc, char* argv[])
     return SRSRAN_ERROR;
   }
 
-  if(root["databases"] && root["databases"].isSequence()){
+  if(root["databases"] && root["databases"].IsSequence()){
 		for (const auto& dbNode : root["databases"]){
       if (!node_as<bool>(dbNode, "enable", false)) {
         continue;
       }
-      DatabseConfig db;
-			db.url = node_as<std::string>(dbNode, "url", "localhost");
-			db.port = node_as<uint32_t>(dbNode, "port", 8086);
-			db.org = node_as<std::string>(dbNode, "org", "");
-			db.token = node_as<std::string>(dbNode, "token", "");
-			db.bucket = node_as<std::string>(dbNode, "bucket", "");
-			db.data_id	= node_as<std::string>(dbNode, "data_id", "");
+      DatabaseConfig db;
+      db.url = node_as<std::string>(dbNode, "url", "localhost");
+      db.port = node_as<uint32_t>(dbNode, "port", 8086);
+      db.org = node_as<std::string>(dbNode, "org", "");
+      db.token = node_as<std::string>(dbNode, "token", "");
+      db.bucket = node_as<std::string>(dbNode, "bucket", "");
+      db.data_id	= node_as<std::string>(dbNode, "data_id", "");
 
       std::cout << "Database Config: " << std::endl;
       std::cout << "  URL: " << db.url << std::endl;
@@ -196,7 +196,7 @@ int parse_args(ShadowerConfig& config, int argc, char* argv[])
       std::cout << "  data_id: " << db.data_id << std::endl;
       std::cout << "  token: " << '*' * db.token.length() << std::endl;
 
-      if (!db.token || !db.org || !db.bucket || !db.data_id) {
+      if (db.token.empty() || db.org.empty() || db.bucket.empty() || db.data_id.empty()) {
         std::cerr << "Required databse parameters not supplied: token, org, bucket, data_id" << std::endl;
         return SRSRAN_ERROR;
       }

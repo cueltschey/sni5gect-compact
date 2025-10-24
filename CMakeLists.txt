@@ -686,5 +686,6 @@ add_custom_target(add_srsran_headers SOURCES ${HEADERS_ALL})
 ########################################################################
 # Add the subdirectories
 ########################################################################
+add_subdirectory(srsue)
 add_subdirectory(lib)
 add_subdirectory(shadower)
