@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+
 struct ChannelConfig {
   double rx_frequency = 3427.5e6;
   double tx_frequency = 3427.5e6;
@@ -16,6 +17,15 @@ struct ChannelConfig {
   double tx_gain      = 80;
   bool   enabled      = true;
 };
+
+struct DatabaseConfig = {
+  std::string url     = "localhost";
+  uint32_t port       =  8086;
+  std::string org     =  "";
+  std::string token   = "605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b";
+  std::string bucket  = "rtusystem";
+  std::string data_id = "";
+}
 
 struct ShadowerConfig {
   // Cell info
@@ -51,6 +61,9 @@ struct ShadowerConfig {
 
   // channels settings
   std::vector<ChannelConfig> channels;
+
+  // influxDB database settings
+  std::vector<DatabaseConfig> databases;
 
   // Worker configurations
   size_t   pool_size = 24;  // Thread pool size
