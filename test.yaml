@@ -54,7 +54,7 @@ uetracker:
 
 databases:
   - enable: true
-    url: "0.0.0.0"
+    host: "0.0.0.0"
     port: 8086
     org: "rtu"
     token: "605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b"

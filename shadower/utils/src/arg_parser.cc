@@ -181,7 +181,7 @@ int parse_args(ShadowerConfig& config, int argc, char* argv[])
         continue;
       }
       DatabaseConfig db;
-      db.url = node_as<std::string>(dbNode, "url", "localhost");
+      db.host = node_as<std::string>(dbNode, "host", "localhost");
       db.port = node_as<uint32_t>(dbNode, "port", 8086);
       db.org = node_as<std::string>(dbNode, "org", "");
       db.token = node_as<std::string>(dbNode, "token", "");
@@ -189,7 +189,7 @@ int parse_args(ShadowerConfig& config, int argc, char* argv[])
       db.data_id	= node_as<std::string>(dbNode, "data_id", "");
 
       std::cout << "Database Config: " << std::endl;
-      std::cout << "  URL: " << db.url << std::endl;
+      std::cout << "  URL: " << db.host << std::endl;
       std::cout << "  port: " << db.port << std::endl;
       std::cout << "  org: " << db.org << std::endl;
       std::cout << "  bucket: " << db.bucket << std::endl;

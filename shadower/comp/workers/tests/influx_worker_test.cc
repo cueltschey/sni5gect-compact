@@ -10,22 +10,22 @@ void parse_args(int argc, char* argv[])
     switch (opt) {
       case 'h': {
         config.host = std::string(argv[optind]);
-        printf("Using host: %s\n", config.host);
+        printf("Using host: %s\n", config.host.c_str());
         break;
       }
       case 'b': {
         config.bucket = std::string(argv[optind]);
-        printf("Using bucket: %s\n", config.bucket);
+        printf("Using bucket: %s\n", config.bucket.c_str());
         break;
       }
       case 'o': {
         config.org = std::string(argv[optind]);
-        printf("Using org: %s\n", config.bucket);
+        printf("Using org: %s\n", config.bucket.c_str());
         break;
       }
       case 't': {
         config.token = std::string(argv[optind]);
-        printf("Using bucket: %s\n", config.token);
+        printf("Using bucket: %s\n", config.token.c_str());
         break;
       }
       case 'p': {

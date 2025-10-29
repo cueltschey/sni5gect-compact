@@ -4,6 +4,7 @@
 #include "shadower/comp/trace_samples/trace_samples.h"
 #include "shadower/comp/ue_tracker.h"
 #include "shadower/comp/workers/broadcast_worker.h"
+#include "shadower/comp/workers/influx_worker.h"
 #include "shadower/comp/workers/wd_worker.h"
 #include "shadower/source/source.h"
 #include "shadower/utils/arg_parser.h"
@@ -36,6 +37,7 @@ private:
   uint32_t             ncellid = 0;
 
   std::vector<std::shared_ptr<BroadCastWorker> > broadcast_workers = {};
+  std::vector<std::shared_ptr<InfluxWorker> > influx_workers = {};
 
   void run_thread() override;
 

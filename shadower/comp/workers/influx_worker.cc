@@ -1,30 +1,14 @@
 #include "shadower/comp/workers/influx_worker.h"
 
-InfluxWorker::InfluxWorker(srslog::basic_logger& logger_, Source* source_, ShadowerConfig& config_) :
-  logger(logger_), config(config_) {}
+InfluxWorker::InfluxWorker(srslog::basic_logger& logger_, const DatabaseConfig config_) :
+  logger(logger_), influx_server_info(config_.host, config_.port, config_.org, config_.token, config_.bucket) {}
 
 InfluxWorker::~InfluxWorker() {}
 
-bool InfluxWorker::init()
-{
-  std::lock_guard<std::mutex> lock(mutex);
-	influx_server_info = influxdb_cpp::server_info(config.url, config.port, config.org, config.token, config.bucket);
-
-  return influx_server_info.resp_;
-}
-
-template <typename T>
-bool InfluxWorker::push_msg(const T& data){
-  std::lock_guard<std::mutex> lock(mutex);
-	msg_queue.push(data);
-	cv.notify_one();
-	return true;
-}
-
 void InfluxWorker::work_imp(){
 	while(true){
-		std::lock_guard<std::mutex> lock(mutex);
-		cv.wait(lock, [this](){ return !message_queue.empty(); })
+		std::unique_lock<std::mutex> lock(mutex);
+		cv.wait(lock, [this](){ return !msg_queue.empty(); });
 
 		auto msg_variant = msg_queue.front();
 		msg_queue.pop();
@@ -39,9 +23,11 @@ void InfluxWorker::work_imp(){
 
 // TODO: send data fully
 bool InfluxWorker::send_mib(const srsran_mib_nr_t& mib){
-	logger.log(srslog::level::info, "Sending MIB...");
+	logger.info(RED "Sending MIB..." RESET);
+	return true;
 }
 
 bool InfluxWorker::send_sib1(const asn1::rrc_nr::sib1_s& sib1){
-	logger.log(srslog::level::info, "Sending SIB1...");
+	logger.info(RED "Sending SIB1..." RESET);
+	return true;
 }

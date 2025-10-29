@@ -19,7 +19,7 @@ struct ChannelConfig {
 };
 
 struct DatabaseConfig {
-  std::string url     = "localhost";
+  std::string host    = "localhost";
   uint32_t port       =  8086;
   std::string org     =  "";
   std::string token   = "605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b";

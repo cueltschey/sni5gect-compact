@@ -31,6 +31,13 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
   thread_pool = new ThreadPool(config.pool_size);
   /* Initialize a list of UE trackers before start */
   pre_initialize_ue();
+
+  // Initialize DB connection (if configure)
+  for(const auto& dbConfig : config.databases){
+		if(dbConfig.token.empty() || dbConfig.org.empty() || 
+				dbConfig.org.empty() || dbConfig.host.empty()) continue;
+		influx_workers.push_back(std::make_shared<InfluxWorker>(logger, dbConfig));
+  }
 }
 
 /* Initialize a list of UE trackers before start */
@@ -103,6 +110,10 @@ void Scheduler::handle_mib(srsran_mib_nr_t& mib_, uint32_t ncellid_)
     ue->apply_config_from_mib(mib, ncellid);
   }
   logger.info(CYAN "MIB applied to all workers" RESET);
+
+	for(const std::shared_ptr<InfluxWorker>& worker : influx_workers){
+		worker->push_msg<srsran_mib_nr_t>(mib);
+	}
 }
 
 /* handler to apply sib1 configuration to multiple workers */
@@ -157,6 +168,10 @@ void Scheduler::handle_sib1(asn1::rrc_nr::sib1_s& sib1_)
     bc_worker->set_rnti(ra_rnti, srsran_rnti_type_ra);
     logger.info("Activating Broadcast Worker for RA-RNTI[%u]: %u", ra_rnti_idx, ra_rnti);
   }
+
+	for(const std::shared_ptr<InfluxWorker>& worker : influx_workers){
+		worker->push_msg(sib1);
+	}
 }
 
 void Scheduler::run_thread()
