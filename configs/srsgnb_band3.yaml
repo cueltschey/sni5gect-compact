@@ -3,9 +3,9 @@ cell:
   nof_prb: 106 # Number of Physical Resource Blocks
   scs_common: 15 # Subcarrier Spacing for common (kHz)
   scs_ssb: 15 # Subcarrier Spacing for SSB (kHz)
-  ssb_period_ms: 10 # SSB periodicity in milliseconds
+  ssb_period_ms: 1 # SSB periodicity in milliseconds
   dl_arfcn: 368500 # Downlink ARFCN
-  ssb_arfcn: 368500 # SSB ARFCN
+  ssb_arfcn: 368410 # SSB ARFCN
 
 source:
   source_type: uhd
@@ -23,13 +23,20 @@ rf:
     front_padding: 0 # Number of IQ samples to pad in front of each burst
     back_padding: 0 # Number of IQ samples to pad at the end of each burst
   channels:
-    - rx_frequency: 1842e6
-      tx_frequency: 1842e6
+    - rx_frequency: 1842.5e6
+      tx_frequency: 1842.5e6
+      rx_offset: 0
+      tx_offset: 3000
+      rx_gain: 40
+      tx_gain: 50
+      enable: true
+    - rx_frequency: 1747.5e6
+      tx_frequency: 1747.5e6
       rx_offset: 0
       tx_offset: 0
       rx_gain: 40
-      tx_gain: 80
-      enable: true
+      tx_gain: 50
+      enable: false
 
 workers:
   pool_size: 24 # Worker pool size
@@ -41,7 +48,7 @@ workers:
 uetracker:
   close_timeout: 5000 # ms: stop tracking if no messages received
   parse_messages: true # Parse messages
-  num_ues: 5 # Number of UETrackers to pre-initialize
+  num_ues: 1 # Number of UETrackers to pre-initialize
   enable_gpu: false # GPU acceleration for decoding
 
 downlink_injector:

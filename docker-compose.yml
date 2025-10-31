@@ -8,11 +8,18 @@ services:
     privileged: true
     network_mode: host
     volumes:
-      - "/dev/:/dev/"
-      - ./configs:/configs
-      - /home/charles/collected_iq:/iq
+      - /dev/bus/usb:/dev/bus/usb
+      - ./.uhd_images/:/usr/local/share/uhd/images
+    environment:
+      UHD_IMAGES_DIR: "/usr/local/share/uhd/images"
+    configs:
+      - shadower.yml
     deploy:
       resources:
         reservations:
           cpus: '1'
           memory: 1G
+
+configs:
+  shadower.yml:
+    file: ${SNI5GECT_CONFIG:-configs/srsgnb_band3.yaml}

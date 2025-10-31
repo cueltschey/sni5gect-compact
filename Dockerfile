@@ -70,3 +70,5 @@ RUN cmake -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 \
         --no-warn-unused-cli -B build -G Ninja && \
         ninja -C build
+
+CMD ["/root/sni5gect/build/shadower/shadower", "/shadower.yml"]
