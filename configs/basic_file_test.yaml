@@ -4,39 +4,32 @@ cell:
   scs_common: 15 # Subcarrier Spacing for common (kHz)
   scs_ssb: 15 # Subcarrier Spacing for SSB (kHz)
   ssb_period_ms: 10 # SSB periodicity in milliseconds
-  dl_arfcn: 373000 # Downlink ARFCN
-  ssb_arfcn: 371530 # SSB ARFCN
+  dl_arfcn: 368500 # Downlink ARFCN
+  ssb_arfcn: 368500 # SSB ARFCN
 
 
 source:
   source_type: file
-  source_params: /root/records/band3/round_1/output_ch_0.fc32,/root/records/band3/round_1/output_ch_1.fc32
+  source_params: /iq/pdcch_1842MHz_amarisoft.fc32
 
 enable_recorder: false # record the IQ samples to file
 pcap_folder: logs/
 
 rf:
   sample_rate: 23.04e6
-  num_channels: 2
+  num_channels: 1
   uplink_cfo: 0 # Uplink Carrier Frequency Offset correction in Hz
   downlink_cfo: 0 # Downlink Carrier Frequency Offset (CFO) in Hz
   padding:
     front_padding: 0 # Number of IQ samples to pad in front of each burst
     back_padding: 0 # Number of IQ samples to pad at the end of each burst
   channels:
-    - rx_frequency: 1865e6
-      tx_frequency: 1865e6
+    - rx_frequency: 1842e6
+      tx_frequency: 1842e6
       rx_offset: 0
       tx_offset: 0
-      rx_gain: 24
-      tx_gain: 31
-      enable: true
-    - rx_frequency: 1770e6
-      tx_frequency: 1770e6
-      rx_offset: 0
-      tx_offset: 0
-      rx_gain: 24
-      tx_gain: 31
+      rx_gain: 40
+      tx_gain: 80
       enable: true
 
 workers:
@@ -52,6 +45,14 @@ uetracker:
   num_ues: 5 # Number of UETrackers to pre-initialize
   enable_gpu: false # GPU acceleration for decoding
 
+downlink_injector:
+  delay_n_slots: 5 # Number of slots to delay injecting the message
+  duplications: 2 # Number of duplications to send in each inject
+  tx_cfo_correction: 0 # Uplink CFO correction (Hz)
+  tx_advancement: 160 # Number of samples to send in advance
+  pdsch_mcs: 3 # PDSCH MCS
+  pdsch_prbs: 24 # PDSCH PRBs
+
 databases:
   - enable: true
     host: "0.0.0.0"
@@ -59,12 +60,12 @@ databases:
     org: "rtu"
     token: "605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b"
     bucket: "rtusystem"
-    data_identifier: "test"
+    data_id: "test"
 
 log:
   log_level: INFO
   syncer: INFO
   worker: INFO
-  bc_worker: DEBUG
+  bc_worker: INFO
 
 exploit: build/modules/lib_dummy_exploit.so # exploit module to use

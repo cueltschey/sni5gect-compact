@@ -111,9 +111,10 @@ void Scheduler::handle_mib(srsran_mib_nr_t& mib_, uint32_t ncellid_)
   }
   logger.info(CYAN "MIB applied to all workers" RESET);
 
-	for(const std::shared_ptr<InfluxWorker>& worker : influx_workers){
-		worker->push_msg<srsran_mib_nr_t>(mib);
-	}
+  for(const std::shared_ptr<InfluxWorker>& worker : influx_workers){
+	  worker->push_msg<srsran_mib_nr_t>(mib);
+		thread_pool->enqueue([worker]() { worker->work(); });
+  }
 }
 
 /* handler to apply sib1 configuration to multiple workers */
@@ -124,6 +125,10 @@ void Scheduler::handle_sib1(asn1::rrc_nr::sib1_s& sib1_)
   for (const std::shared_ptr<UETracker>& ue : ue_trackers) {
     ue->apply_config_from_sib1(sib1);
   }
+	for(const std::shared_ptr<InfluxWorker>& worker : influx_workers){
+		worker->push_msg(sib1);
+		thread_pool->enqueue([worker]() { worker->work(); });
+	}
   logger.info(CYAN "SIB1 applied to all workers" RESET);
 
   // Update cell status
@@ -168,10 +173,6 @@ void Scheduler::handle_sib1(asn1::rrc_nr::sib1_s& sib1_)
     bc_worker->set_rnti(ra_rnti, srsran_rnti_type_ra);
     logger.info("Activating Broadcast Worker for RA-RNTI[%u]: %u", ra_rnti_idx, ra_rnti);
   }
-
-	for(const std::shared_ptr<InfluxWorker>& worker : influx_workers){
-		worker->push_msg(sib1);
-	}
 }
 
 void Scheduler::run_thread()
