@@ -25,7 +25,7 @@ bool InfluxWorker::work(){
 
 // TODO: send data fully
 bool InfluxWorker::send_mib(const srsran_mib_nr_t& mib){
-	logger.info(RED "Sending MIB..." RESET);
+	logger.info(GREEN "Sending MIB as %s" RESET, data_id.c_str());
 
 	std::string response_text;
 	influxdb_cpp::builder()
@@ -55,6 +55,33 @@ bool InfluxWorker::send_mib(const srsran_mib_nr_t& mib){
 }
 
 bool InfluxWorker::send_sib1(const asn1::rrc_nr::sib1_s& sib1){
-	logger.info(RED "Sending SIB1..." RESET);
+	logger.info(GREEN "Sending SIB1 as %s" RESET, data_id.c_str());
+
+	/*
+	std::string response_text;
+	influxdb_cpp::builder()
+        .meas("rtue_carrier_metric")
+        .tag("sni5gect_data_id", data_id)
+
+        .field("sfn", (long long)mib.sfn)
+        .field("ssb_idx", (long long)mib.ssb_idx)
+        .field("hrf", (bool)mib.hrf)
+        .field("scs_common", (int)mib.scs_common)
+        .field("ssb_offset", (long long)mib.ssb_offset)
+        .field("dmrs_typeA_pos", (int)mib.dmrs_typeA_pos)
+        .field("coreset0_idx", (long long)mib.coreset0_idx)
+        .field("ss0_idx", (long long)mib.ss0_idx)
+        .field("cell_barred", (bool)mib.cell_barred)
+        .field("intra_freq_reselection", (bool)mib.intra_freq_reselection)
+        .field("spare", (long long)mib.spare)
+
+        .post_http(influx_server_info, &response_text);
+
+
+	if (response_text.length() > 0) {
+		logger.error(RED "Recieved error from influxdb: %s" RESET, response_text.c_str());
+		return false;
+	}
+	*/
 	return true;
 }
