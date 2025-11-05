@@ -33,11 +33,43 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
   pre_initialize_ue();
 
   // Initialize DB connection (if configure)
-  for(const auto& dbConfig : config.databases){
+  for(const DatabaseConfig& dbConfig : config.databases){
 		if(dbConfig.token.empty() || dbConfig.org.empty() || 
 				dbConfig.org.empty() || dbConfig.host.empty()) continue;
 		influx_workers.push_back(std::make_shared<InfluxWorker>(logger, dbConfig));
   }
+
+	// Send general band info to each DB
+	for(const auto& worker : influx_workers){
+		influx_band_report_t report = {};
+		report.band = config.band;
+		report.nof_prb = config.nof_prb;
+		report.offset_to_carrier = config.offset_to_carrier;
+		report.scs_common = config.scs_common;
+		report.scs_ssb = config.scs_ssb;
+		report.dl_arfcn = config.dl_arfcn;
+		report.ul_arfcn = config.ul_arfcn;
+		report.ssb_arfcn = config.ssb_arfcn;
+		report.dl_freq = config.dl_freq;
+		report.ul_freq = config.ul_freq;
+		report.ssb_freq = config.ssb_freq;
+		report.ssb_pattern = config.ssb_pattern;
+		report.sample_rate = config.sample_rate;
+		report.uplink_cfo = config.sample_rate;
+		report.downlink_cfo = config.sample_rate;
+
+		worker->push_msg<influx_band_report_t>(chConfig);
+		thread_pool->enqueue([worker]() { worker->work(); });
+	}
+
+	// Send channel configuration to each DB
+	for(const ChannelConfig& chConfig : config.channels){
+		for(const auto& worker : influx_workers){
+			worker->push_msg<ChannelConfig>(chConfig);
+			thread_pool->enqueue([worker]() { worker->work(); });
+		}
+	}
+
 }
 
 /* Initialize a list of UE trackers before start */

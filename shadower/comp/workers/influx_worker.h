@@ -15,6 +15,24 @@
 #include <type_traits>
 #include <variant>
 
+typedef struct influx_band_report_s {
+	uint16_t band;
+	uint32_t nof_prb;
+	uint32_t offset_to_carrier;
+	srsran_subcarrier_spacing_t scs_common;
+	srsran_subcarrier_spacing_t scs_ssb;
+	uint32_t dl_arfcn;
+	uint32_t ul_arfcn;
+	uint32_t ssb_arfcn;
+	double dl_freq;
+	double ul_freq;
+	double ssb_freq;
+	srsran_ssb_pattern_t ssb_pattern;
+	double sample_rate;
+	double uplink_cfo;
+	double downlink_cfo;
+} influx_band_report_t;
+
 class InfluxWorker
 {
 public:
@@ -40,7 +58,7 @@ private:
 	std::string data_id;
 
   // Queue of any message type
-  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s>> msg_queue;
+  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig>> msg_queue;
   std::condition_variable cv;
 
   bool send_mib(const srsran_mib_nr_t& mib);
