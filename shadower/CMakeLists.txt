@@ -20,6 +20,8 @@
 set(CMAKE_C_COMPILER "clang-15")
 set(CMAKE_CXX_COMPILER "clang++-15")
 # Global compiler options
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -109,7 +111,7 @@ add_subdirectory(test)
 add_subdirectory(modules)
 
 add_executable(shadower main.cc comp/scheduler.cc comp/ue_tracker.cc modules/exploit_loader.cc)
-target_link_libraries(shadower source syncer exploit_loader thread_pool broadcast_worker ue_dl_worker gnb_ul_worker gnb_dl_worker ${Boost_LIBRARIES})
+target_link_libraries(shadower source syncer exploit_loader thread_pool broadcast_worker ue_dl_worker gnb_ul_worker gnb_dl_worker influx_worker ${Boost_LIBRARIES})
 if(ENABLE_CUDA)
   target_link_libraries(shadower fft_processor ssb_cuda)
 endif(ENABLE_CUDA)

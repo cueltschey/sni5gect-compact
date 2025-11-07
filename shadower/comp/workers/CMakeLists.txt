@@ -43,6 +43,14 @@ target_include_directories(wd_worker PUBLIC ${WDISSECTOR_PATH}/src ${WDISSECTOR_
 add_executable(wd_worker_test tests/wd_worker_test.cc)
 target_link_libraries(wd_worker_test wd_worker utils)
 
+add_library(influx_worker influx_worker.cc)
+target_link_libraries(influx_worker srslog)
+
+add_executable(influx_worker_test tests/influx_worker_test.cc)
+target_link_libraries(influx_worker_test influx_worker utils)
+
+# TODO: add influxdb test
+
 add_library(ue_dl_worker ue_dl_worker.cc)
 target_link_libraries(ue_dl_worker utils srsran_mac wd_worker)
 target_include_directories(ue_dl_worker PUBLIC ${WDISSECTOR_PATH}/src ${WDISSECTOR_INCLUDES})
