@@ -58,7 +58,7 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
 		report.uplink_cfo = config.sample_rate;
 		report.downlink_cfo = config.sample_rate;
 
-		worker->push_msg<influx_band_report_t>(chConfig);
+		worker->push_msg<influx_band_report_t>(report);
 		thread_pool->enqueue([worker]() { worker->work(); });
 	}
 

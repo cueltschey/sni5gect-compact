@@ -18,23 +18,18 @@ bool InfluxWorker::work(){
 		return send_mib(std::get<srsran_mib_nr_t>(msg_variant));
 	} else if(std::holds_alternative<asn1::rrc_nr::sib1_s>(msg_variant)){
 		return send_sib1(std::get<asn1::rrc_nr::sib1_s>(msg_variant));
-	} 
-	logger.warning(YELLOW "Unknown InfluxDB type supplied" RESET);
+	} else if(std::holds_alternative<influx_band_report_t>(msg_variant)){
+		return send_band_report(std::get<influx_band_report_t>(msg_variant));
+	} else if(std::holds_alternative<ChannelConfig>(msg_variant)){
+		return send_channel_config(std::get<ChannelConfig>(msg_variant));
+	}
+
+	logger.warning(YELLOW "Attempted to push unsupported data type to InfluxDB" RESET);
 	return false;
 }
 
 bool InfluxWorker::send_channel_config(const ChannelConfig& ch){
 	logger.info(GREEN "Sending channel config as %s" RESET, data_id.c_str());
-
-struct ChannelConfig {
-  double rx_frequency = 3427.5e6;
-  double tx_frequency = 3427.5e6;
-  double rx_offset    = 0;
-  double tx_offset    = 0;
-  double rx_gain      = 40;
-  double tx_gain      = 80;
-  bool   enabled      = true;
-};
 
 	std::string response_text;
 	influxdb_cpp::builder()
@@ -45,20 +40,9 @@ struct ChannelConfig {
         .field("tx_frequency", (double)ch.tx_frequency)
         .field("rx_offset", (double)ch.rx_offset)
         .field("tx_offset", (double)ch.tx_offset)
-        .field("nof_prb", (long long)report.nof_prb)
-        .field("offset_to_carrier", (long long)report.offset_to_carrier)
-        .field("scs_common", std::string(srsran_subcarrier_spacing_to_str(report.scs_common)))
-        .field("scs_ssb", std::string(srsran_subcarrier_spacing_to_str(report.scs_ssb)))
-        .field("dl_arfcn", (long long)report.dl_arfcn)
-        .field("ul_arfcn", (long long)report.ul_arfcn)
-        .field("ssb_arfcn", (long long)report.ssb_arfcn)
-        .field("ul_freq", (double)report.ul_freq)
-        .field("dl_freq", (double)report.dl_freq)
-        .field("ssb_freq", (double)report.ssb_freq)
-        .field("ssb_pattern", std::string(srsran_ssb_pattern_to_str(report.ssb_pattern)))
-        .field("sample_rate", (double)report.sample_rate)
-        .field("uplink_cfo", (double)report.uplink_cfo)
-        .field("downlink_cfo", (double)report.downlink_cfo)
+        .field("rx_gain", (double)ch.rx_gain)
+        .field("tx_gain", (double)ch.tx_gain)
+        .field("enabled", (bool)ch.enabled)
 
         .post_http(influx_server_info, &response_text);
 

@@ -61,6 +61,8 @@ private:
   std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig>> msg_queue;
   std::condition_variable cv;
 
+	bool send_band_report(const influx_band_report_t& report);
+	bool send_channel_config(const ChannelConfig& ch);
   bool send_mib(const srsran_mib_nr_t& mib);
   bool send_sib1(const asn1::rrc_nr::sib1_s& sib1);
 };
