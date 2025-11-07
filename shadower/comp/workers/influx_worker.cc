@@ -126,11 +126,11 @@ bool InfluxWorker::send_sib1(const asn1::rrc_nr::sib1_s& sib1){
         .meas("prach_cfg")
         .tag("sni5gect_data_id", data_id)
 
-        .field("config_idx", (int) sib1.serving_cell_cfg_common.ul_config_common.init_ul_bwp.rach_cfg_common.rach_cfg_generic.prach_config_idx)
-        .field("root_seq_idx", (int) sib1.serving_cell_cfg_common.ul_config_common.init_ul_bwp.rach_cfg_common.prach_root_seq_idx.to_number())
-        .field("zero_corr_zone", (int) sib1.serving_cell_cfg_common.ul_config_common.init_ul_bwp.rach_cfg_common.rach_cfg_generic.zero_correlation_zone_cfg)
-        .field("freq_offset", (int) sib1.serving_cell_cfg_common.ul_config_common.init_ul_bwp.rach_cfg_common.rach_cfg_generic.msg1_freq_start)
-        .field("num_ra_preambles", (int) sib1.serving_cell_cfg_common.ul_config_common.init_ul_bwp.rach_cfg_common.total_nof_ra_preambs)
+        .field("config_idx", (int) sib1.serving_cell_cfg_common.ul_cfg_common.init_ul_bwp.rach_cfg_common.setup().rach_cfg_generic.prach_cfg_idx)
+        .field("root_seq_idx", (int) sib1.serving_cell_cfg_common.ul_cfg_common.init_ul_bwp.rach_cfg_common.setup().prach_root_seq_idx.l839())
+        .field("zero_corr_zone", (int) sib1.serving_cell_cfg_common.ul_cfg_common.init_ul_bwp.rach_cfg_common.setup().rach_cfg_generic.zero_correlation_zone_cfg)
+        .field("freq_offset", (int) sib1.serving_cell_cfg_common.ul_cfg_common.init_ul_bwp.rach_cfg_common.setup().rach_cfg_generic.msg1_freq_start)
+        .field("num_ra_preambles", (int) sib1.serving_cell_cfg_common.ul_cfg_common.init_ul_bwp.rach_cfg_common.setup().total_nof_ra_preambs)
 
         .post_http(influx_server_info, &response_text);
 
