@@ -1,3 +1,5 @@
+from worker_thread import WorkerThread
+
 class sni5gect(WorkerThread):
     def start(self):
         self.config.image_name = "ghcr.io/cueltschey/sni5gect-compact"
