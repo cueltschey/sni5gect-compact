@@ -41,7 +41,7 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
 
 	// Send general band info to each DB
 	for(const auto& worker : influx_workers){
-		influx_band_report_t report = {};
+		recon_band_report_t report = {};
 		report.band = config.band;
 		report.nof_prb = config.nof_prb;
 		report.offset_to_carrier = config.offset_to_carrier;
@@ -58,7 +58,7 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
 		report.uplink_cfo = config.sample_rate;
 		report.downlink_cfo = config.sample_rate;
 
-		worker->push_msg<influx_band_report_t>(report);
+		worker->push_msg<recon_band_report_t>(report);
 		thread_pool->enqueue([worker]() { worker->work(); });
 	}
 

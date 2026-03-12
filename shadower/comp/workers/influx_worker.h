@@ -31,7 +31,7 @@ typedef struct influx_band_report_s {
 	double sample_rate;
 	double uplink_cfo;
 	double downlink_cfo;
-} influx_band_report_t;
+} recon_band_report_t;
 
 class InfluxWorker
 {
@@ -58,10 +58,10 @@ private:
 	std::string data_id;
 
   // Queue of any message type
-  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig>> msg_queue;
+  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, recon_band_report_t, ChannelConfig>> msg_queue;
   std::condition_variable cv;
 
-	bool send_band_report(const influx_band_report_t& report);
+	bool send_band_report(const recon_band_report_t& report);
 	bool send_channel_config(const ChannelConfig& ch);
   bool send_mib(const srsran_mib_nr_t& mib);
   bool send_sib1(const asn1::rrc_nr::sib1_s& sib1);

@@ -18,8 +18,8 @@ bool InfluxWorker::work(){
 		return send_mib(std::get<srsran_mib_nr_t>(msg_variant));
 	} else if(std::holds_alternative<asn1::rrc_nr::sib1_s>(msg_variant)){
 		return send_sib1(std::get<asn1::rrc_nr::sib1_s>(msg_variant));
-	} else if(std::holds_alternative<influx_band_report_t>(msg_variant)){
-		return send_band_report(std::get<influx_band_report_t>(msg_variant));
+	} else if(std::holds_alternative<recon_band_report_t>(msg_variant)){
+		return send_band_report(std::get<recon_band_report_t>(msg_variant));
 	} else if(std::holds_alternative<ChannelConfig>(msg_variant)){
 		return send_channel_config(std::get<ChannelConfig>(msg_variant));
 	}
@@ -54,7 +54,7 @@ bool InfluxWorker::send_channel_config(const ChannelConfig& ch){
 	return true;
 }
 
-bool InfluxWorker::send_band_report(const influx_band_report_t& report){
+bool InfluxWorker::send_band_report(const recon_band_report_t& report){
 	logger.info(GREEN "Sending band report as %s" RESET, data_id.c_str());
 
 	std::string response_text;
