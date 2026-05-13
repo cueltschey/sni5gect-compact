@@ -26,10 +26,10 @@ RUN apt -y install python3-pip python3-dev software-properties-common kmod bc gz
         libzstd1 libunwind8 libcap2 libspeexdsp1 libxtst6 libatk-bridge2.0-0 libusb-1.0-0 meson
 # Install llvm 15
 RUN wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && ./llvm.sh 15 && rm llvm.sh
-RUN arch=$(dpkg --print-architecture) \
-    && wget https://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.1_1.1.1w-0+deb11u3_${arch}.deb \
-    && dpkg -i libssl1.1_1.1.1w-0+deb11u3_${arch}.deb \
-    && rm libssl1.1_1.1.1w-0+deb11u3_${arch}.deb
+#RUN arch=$(dpkg --print-architecture) \
+#    && wget https://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.1_1.1.1w-0+deb11u3_${arch}.deb \
+#    && dpkg -i libssl1.1_1.1.1w-0+deb11u3_${arch}.deb \
+#    && rm libssl1.1_1.1.1w-0+deb11u3_${arch}.deb
 
 
 
