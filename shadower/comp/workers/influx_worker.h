@@ -9,6 +9,7 @@
 #include "srsran/phy/gnb/gnb_dl.h"
 #include "srsran/srslog/srslog.h"
 #include <mutex>
+#include <string>
 #include <vector>
 #include <queue>
 #include <condition_variable>
@@ -32,6 +33,25 @@ typedef struct influx_band_report_s {
 	double uplink_cfo;
 	double downlink_cfo;
 } influx_band_report_t;
+
+typedef struct cell_config_s {
+  uint16_t band;
+  uint32_t nof_prb;
+  uint32_t dl_arfcn;
+  uint32_t ul_arfcn;
+  double   dl_freq;
+  double   ul_freq;
+  double   sample_rate;
+  double   rx_gain;
+  double   tx_gain;
+  double   rx_frequency;
+  double   tx_frequency;
+  std::string scs_common;
+  std::string scs_ssb;
+  std::string ssb_pattern;
+  double   uplink_cfo;
+  double   downlink_cfo;
+} cell_config_t;
 
 class InfluxWorker
 {
@@ -58,13 +78,14 @@ private:
 	std::string data_id;
 
   // Queue of any message type
-  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig>> msg_queue;
+  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig, cell_config_t>> msg_queue;
   std::condition_variable cv;
 
 	bool send_band_report(const influx_band_report_t& report);
 	bool send_channel_config(const ChannelConfig& ch);
   bool send_mib(const srsran_mib_nr_t& mib);
   bool send_sib1(const asn1::rrc_nr::sib1_s& sib1);
+  bool send_cell_config(const cell_config_t& cfg);
 };
 
 #endif // INFLUX_WORKER

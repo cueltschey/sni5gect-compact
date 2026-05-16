@@ -22,10 +22,46 @@ bool InfluxWorker::work(){
 		return send_band_report(std::get<influx_band_report_t>(msg_variant));
 	} else if(std::holds_alternative<ChannelConfig>(msg_variant)){
 		return send_channel_config(std::get<ChannelConfig>(msg_variant));
+	} else if(std::holds_alternative<cell_config_t>(msg_variant)){
+		return send_cell_config(std::get<cell_config_t>(msg_variant));
 	}
 
 	logger.warning(YELLOW "Attempted to push unsupported data type to InfluxDB" RESET);
 	return false;
+}
+
+bool InfluxWorker::send_cell_config(const cell_config_t& cfg){
+  logger.info(GREEN "Sending unified cell config as %s" RESET, data_id.c_str());
+
+  std::string response_text;
+  influxdb_cpp::builder()
+    .meas("cell_config")
+    .tag("sni5gect_data_id", data_id)
+
+    .field("band", (long long)cfg.band)
+    .field("nof_prb", (long long)cfg.nof_prb)
+    .field("dl_arfcn", (long long)cfg.dl_arfcn)
+    .field("ul_arfcn", (long long)cfg.ul_arfcn)
+    .field("dl_freq", (double)cfg.dl_freq)
+    .field("ul_freq", (double)cfg.ul_freq)
+    .field("sample_rate", (double)cfg.sample_rate)
+    .field("rx_gain", (double)cfg.rx_gain)
+    .field("tx_gain", (double)cfg.tx_gain)
+    .field("rx_frequency", (double)cfg.rx_frequency)
+    .field("tx_frequency", (double)cfg.tx_frequency)
+    .field("scs_common", cfg.scs_common)
+    .field("scs_ssb", cfg.scs_ssb)
+    .field("ssb_pattern", cfg.ssb_pattern)
+    .field("uplink_cfo", (double)cfg.uplink_cfo)
+    .field("downlink_cfo", (double)cfg.downlink_cfo)
+
+    .post_http(influx_server_info, &response_text);
+
+  if (response_text.length() > 0) {
+    logger.error(RED "Recieved error from influxdb: %s" RESET, response_text.c_str());
+    return false;
+  }
+  return true;
 }
 
 bool InfluxWorker::send_channel_config(const ChannelConfig& ch){

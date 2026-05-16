@@ -70,6 +70,31 @@ Scheduler::Scheduler(ShadowerConfig& config_, Source* source_, Syncer* syncer_, 
 		}
 	}
 
+	// Send unified cell config to each DB
+	for(const auto& worker : influx_workers){
+		cell_config_t cell_cfg = {};
+		cell_cfg.band = config.band;
+		cell_cfg.nof_prb = config.nof_prb;
+		cell_cfg.dl_arfcn = config.dl_arfcn;
+		cell_cfg.ul_arfcn = config.ul_arfcn;
+		cell_cfg.dl_freq = config.dl_freq;
+		cell_cfg.ul_freq = config.ul_freq;
+		cell_cfg.sample_rate = config.sample_rate;
+		cell_cfg.scs_common = srsran_subcarrier_spacing_to_str(config.scs_common);
+		cell_cfg.scs_ssb = srsran_subcarrier_spacing_to_str(config.scs_ssb);
+		cell_cfg.ssb_pattern = srsran_ssb_pattern_to_str(config.ssb_pattern);
+		cell_cfg.uplink_cfo = config.sample_rate;
+		cell_cfg.downlink_cfo = config.sample_rate;
+		if(!config.channels.empty()){
+			cell_cfg.rx_gain = config.channels[0].rx_gain;
+			cell_cfg.tx_gain = config.channels[0].tx_gain;
+			cell_cfg.rx_frequency = config.channels[0].rx_frequency;
+			cell_cfg.tx_frequency = config.channels[0].tx_frequency;
+		}
+		worker->push_msg<cell_config_t>(cell_cfg);
+		thread_pool->enqueue([worker]() { worker->work(); });
+	}
+
 }
 
 /* Initialize a list of UE trackers before start */
