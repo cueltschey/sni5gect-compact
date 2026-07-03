@@ -109,6 +109,7 @@ void Scheduler::pre_initialize_ue()
       continue;
     }
     ue->on_deactivate = std::bind(&Scheduler::on_ue_deactivate, this);
+    ue->on_rrc_reconfig_export = std::bind(&Scheduler::handle_rrc_reconfig_export, this, std::placeholders::_1);
     ue_trackers.push_back(ue);
   }
 }
@@ -229,6 +230,14 @@ void Scheduler::handle_sib1(asn1::rrc_nr::sib1_s& sib1_)
     uint16_t ra_rnti = ra_rnti_list[ra_rnti_idx];
     bc_worker->set_rnti(ra_rnti, srsran_rnti_type_ra);
     logger.info("Activating Broadcast Worker for RA-RNTI[%u]: %u", ra_rnti_idx, ra_rnti);
+  }
+}
+
+void Scheduler::handle_rrc_reconfig_export(rrc_reconfig_export_t& exp)
+{
+  for (const auto& worker : influx_workers) {
+    worker->push_msg<rrc_reconfig_export_t>(exp);
+    thread_pool->enqueue([worker]() { worker->work(); });
   }
 }
 

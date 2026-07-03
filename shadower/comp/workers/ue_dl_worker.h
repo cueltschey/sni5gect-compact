@@ -52,6 +52,9 @@ public:
   /* Apply the configuration to cell group config */
   std::function<void(asn1::rrc_nr::cell_group_cfg_s&)> apply_cell_group_cfg = [](asn1::rrc_nr::cell_group_cfg_s&) {};
 
+  /* Fired when an RRC Reconfiguration is decoded, passes the transaction id and cell group config */
+  std::function<void(uint8_t, asn1::rrc_nr::cell_group_cfg_s&)> on_rrc_reconfig = [](uint8_t, asn1::rrc_nr::cell_group_cfg_s&) {};
+
   /* Update the last received message timestamp */
   std::function<void()> update_rx_timestamp = []() {};
 

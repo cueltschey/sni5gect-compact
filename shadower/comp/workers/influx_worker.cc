@@ -22,11 +22,13 @@ bool InfluxWorker::work(){
 		return send_band_report(std::get<influx_band_report_t>(msg_variant));
 	} else if(std::holds_alternative<ChannelConfig>(msg_variant)){
 		return send_channel_config(std::get<ChannelConfig>(msg_variant));
-	} else if(std::holds_alternative<cell_config_t>(msg_variant)){
-		return send_cell_config(std::get<cell_config_t>(msg_variant));
-	}
+  } else if(std::holds_alternative<cell_config_t>(msg_variant)){
+    return send_cell_config(std::get<cell_config_t>(msg_variant));
+  } else if(std::holds_alternative<rrc_reconfig_export_t>(msg_variant)){
+    return send_rrc_reconfig(std::get<rrc_reconfig_export_t>(msg_variant));
+  }
 
-	logger.warning(YELLOW "Attempted to push unsupported data type to InfluxDB" RESET);
+  logger.warning(YELLOW "Attempted to push unsupported data type to InfluxDB" RESET);
 	return false;
 }
 
@@ -54,6 +56,39 @@ bool InfluxWorker::send_cell_config(const cell_config_t& cfg){
     .field("ssb_pattern", cfg.ssb_pattern)
     .field("uplink_cfo", (double)cfg.uplink_cfo)
     .field("downlink_cfo", (double)cfg.downlink_cfo)
+
+    .post_http(influx_server_info, &response_text);
+
+  if (response_text.length() > 0) {
+    logger.error(RED "Recieved error from influxdb: %s" RESET, response_text.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool InfluxWorker::send_rrc_reconfig(const rrc_reconfig_export_t& cfg){
+  logger.info(GREEN "Sending RRC Reconfig data as %s" RESET, data_id.c_str());
+
+  std::string response_text;
+  influxdb_cpp::builder()
+    .meas("rrc_reconfig")
+    .tag("sni5gect_data_id", data_id)
+
+    .field("rnti", (long long)cfg.rnti)
+    .field("rrc_transaction_id", (long long)cfg.rrc_transaction_id)
+    .field("sp_cell_cfg_present", cfg.sp_cell_cfg_present)
+    .field("recfg_with_sync_present", cfg.recfg_with_sync_present)
+    .field("phys_cell_group_cfg_present", cfg.phys_cell_group_cfg_present)
+    .field("rlc_bearer_present", cfg.rlc_bearer_present)
+    .field("mac_cell_group_cfg_present", cfg.mac_cell_group_cfg_present)
+    .field("radio_bearer_cfg_present", cfg.radio_bearer_cfg_present)
+    .field("ded_nas_msg_present", cfg.ded_nas_msg_present)
+    .field("meas_cfg_present", cfg.meas_cfg_present)
+    .field("srb1_present", cfg.srb1_present)
+    .field("srb2_present", cfg.srb2_present)
+    .field("drb_present", cfg.drb_present)
+    .field("pdsch_harq_ack_codebook", (long long)cfg.pdsch_harq_ack_codebook)
+    .field("cell_group_cfg_hex", cfg.cell_group_cfg_hex)
 
     .post_http(influx_server_info, &response_text);
 

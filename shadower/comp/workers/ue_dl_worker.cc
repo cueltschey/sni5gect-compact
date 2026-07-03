@@ -314,6 +314,7 @@ void UEDLWorker::handle_dlsch(uint8_t* sdu, uint32_t len)
         return;
       }
       apply_cell_group_cfg(cell_group_cfg);
+      on_rrc_reconfig(rrc_recfg.rrc_transaction_id, cell_group_cfg);
       break;
     }
 

@@ -62,6 +62,8 @@ private:
 
   void on_ue_deactivate();
 
+  void handle_rrc_reconfig_export(rrc_reconfig_export_t& exp);
+
   /* list of UE trackers */
   std::vector<std::shared_ptr<UETracker> > ue_trackers = {};
 };

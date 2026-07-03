@@ -1,6 +1,7 @@
 #include "shadower/comp/ue_tracker.h"
 #include "shadower/comp/scheduler.h"
 #include "shadower/utils/constants.h"
+#include "shadower/utils/utils.h"
 #include "srsran/asn1/rrc_nr_utils.h"
 
 UETracker::UETracker(Source*           source_,
@@ -117,6 +118,9 @@ bool UETracker::init()
     w->deactivate = std::bind(&UETracker::deactivate, this);
     /* Bind the apply_cell_group_cfg function to UETracker */
     w->apply_cell_group_cfg = std::bind(&UETracker::apply_config_from_rrc_setup, this, std::placeholders::_1);
+    /* Bind the RRC reconfig export handler */
+    w->on_rrc_reconfig = std::bind(&UETracker::handle_rrc_reconfig_export, this,
+                                   std::placeholders::_1, std::placeholders::_2);
     /* Update the corresponding RX timestamp */
     w->update_rx_timestamp = std::bind(&UETracker::update_last_rx_timestamp, this);
     /* Initialize ue_dl worker in the work pool */
@@ -363,4 +367,40 @@ void UETracker::update_last_rx_timestamp()
   if (now > last_message_time) {
     last_message_time = now;
   }
+}
+
+void UETracker::handle_rrc_reconfig_export(uint8_t transaction_id,
+                                           asn1::rrc_nr::cell_group_cfg_s& cell_group)
+{
+  if (!active) return;
+
+  rrc_reconfig_export_t exp = {};
+  exp.rnti                = rnti;
+  exp.rrc_transaction_id  = transaction_id;
+  exp.sp_cell_cfg_present = cell_group.sp_cell_cfg_present;
+  exp.recfg_with_sync_present =
+      cell_group.sp_cell_cfg_present && cell_group.sp_cell_cfg.recfg_with_sync_present;
+  exp.phys_cell_group_cfg_present = cell_group.phys_cell_group_cfg_present;
+  exp.mac_cell_group_cfg_present  = cell_group.mac_cell_group_cfg_present;
+  exp.rlc_bearer_present          = cell_group.rlc_bearer_to_add_mod_list.size() > 0;
+  exp.radio_bearer_cfg_present    = false;
+  exp.ded_nas_msg_present         = false;
+  exp.meas_cfg_present            = false;
+  exp.srb1_present                = false;
+  exp.srb2_present                = false;
+  exp.drb_present                 = false;
+  if (cell_group.phys_cell_group_cfg_present) {
+    exp.pdsch_harq_ack_codebook = cell_group.phys_cell_group_cfg.pdsch_harq_ack_codebook.value;
+  }
+
+  /* Pack the full cell_group_cfg to hex for reconstruction */
+  asn1::dyn_octstring packed;
+  packed.resize(1024);
+  asn1::bit_ref bref(packed.data(), packed.size());
+  if (cell_group.pack(bref) == asn1::SRSASN_SUCCESS) {
+    packed.resize(bref.distance_bytes());
+    exp.cell_group_cfg_hex = buffer_to_hex_string(packed.data(), packed.size());
+  }
+
+  on_rrc_reconfig_export(exp);
 }

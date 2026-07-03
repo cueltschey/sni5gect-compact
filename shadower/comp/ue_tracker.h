@@ -3,6 +3,7 @@
 #include "shadower/comp/sync/syncer.h"
 #include "shadower/comp/workers/gnb_dl_worker.h"
 #include "shadower/comp/workers/gnb_ul_worker.h"
+#include "shadower/comp/workers/influx_worker.h"
 #include "shadower/comp/workers/ue_dl_worker.h"
 #include "shadower/comp/workers/wd_worker.h"
 #include "shadower/modules/exploit.h"
@@ -54,6 +55,9 @@ public:
   /* Apply the configuration from cell group */
   bool apply_config_from_rrc_setup(asn1::rrc_nr::cell_group_cfg_s& cell_group);
 
+  /* Handle RRC Reconfig export: populate rrc_reconfig_export_t and fire callback */
+  void handle_rrc_reconfig_export(uint8_t transaction_id, asn1::rrc_nr::cell_group_cfg_s& cell_group);
+
   /* Distribute the phy_cfg config */
   bool update_cfg();
 
@@ -67,6 +71,9 @@ public:
   void update_last_rx_timestamp();
 
   std::function<void()> on_deactivate = []() {};
+
+  /* Fired when an RRC Reconfiguration is decoded, passing the export data */
+  std::function<void(rrc_reconfig_export_t&)> on_rrc_reconfig_export = [](rrc_reconfig_export_t&) {};
 
   /* Update timing advance */
   void update_timing_advance(int32_t ta_command);

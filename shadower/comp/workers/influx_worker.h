@@ -34,6 +34,24 @@ typedef struct influx_band_report_s {
 	double downlink_cfo;
 } influx_band_report_t;
 
+typedef struct rrc_reconfig_export_s {
+  uint16_t rnti;
+  uint8_t  rrc_transaction_id;
+  bool     sp_cell_cfg_present;
+  bool     recfg_with_sync_present;
+  bool     phys_cell_group_cfg_present;
+  bool     rlc_bearer_present;
+  bool     mac_cell_group_cfg_present;
+  bool     radio_bearer_cfg_present;
+  bool     ded_nas_msg_present;
+  bool     meas_cfg_present;
+  bool     srb1_present;
+  bool     srb2_present;
+  bool     drb_present;
+  uint32_t pdsch_harq_ack_codebook;
+  std::string cell_group_cfg_hex;
+} rrc_reconfig_export_t;
+
 typedef struct cell_config_s {
   uint16_t band;
   uint32_t nof_prb;
@@ -78,7 +96,7 @@ private:
 	std::string data_id;
 
   // Queue of any message type
-  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig, cell_config_t>> msg_queue;
+  std::queue<std::variant<srsran_mib_nr_t, asn1::rrc_nr::sib1_s, influx_band_report_t, ChannelConfig, cell_config_t, rrc_reconfig_export_t>> msg_queue;
   std::condition_variable cv;
 
 	bool send_band_report(const influx_band_report_t& report);
@@ -86,6 +104,7 @@ private:
   bool send_mib(const srsran_mib_nr_t& mib);
   bool send_sib1(const asn1::rrc_nr::sib1_s& sib1);
   bool send_cell_config(const cell_config_t& cfg);
+  bool send_rrc_reconfig(const rrc_reconfig_export_t& cfg);
 };
 
 #endif // INFLUX_WORKER
